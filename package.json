@@ -1,0 +1,32 @@
+{
+  "name": "easy-list",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "rimraf dist && tsc",
+    "start:example": "rimraf example-dist && gulp --gulpfile gulpfile.example.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/lodash": "^4.14.118",
+    "@types/node": "^10.12.12",
+    "babel-core": "^6.26.3",
+    "babelify": "^8.0.0",
+    "browser-sync": "^2.26.3",
+    "browserify": "^16.2.3",
+    "event-stream": "^4.0.1",
+    "gulp": "^3.9.0",
+    "gulp-autoprefixer": "^3.0.1",
+    "gulp-clean-css": "^3.10.0",
+    "gulp-cssimport": "^7.0.0",
+    "gulp-sass": "^2.0.4",
+    "gulp-util": "^3.0.8",
+    "rimraf": "^2.6.2",
+    "tsify": "^4.0.1",
+    "typescript": "^3.1.6",
+    "vinyl-source-stream": "^2.0.0",
+    "watchify": "^3.11.0"
+  }
+}

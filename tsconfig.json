@@ -1,0 +1,29 @@
+{
+	"compileOnSave": false,
+	"compilerOptions": {
+    "outDir": "./dist/",
+    "baseUrl": "./src",
+    "rootDir": "./",
+	  "sourceMap": false,
+	  "declaration": true,
+	  "moduleResolution": "node",
+	  "emitDecoratorMetadata": true,
+	  "experimentalDecorators": true,
+	  "noImplicitAny": false,
+	  "target": "es2015",
+    "module": "commonjs",
+	  "lib": [
+      "es2017",
+      "dom"
+	  ]
+  },
+  "include": [
+    "./index.ts",
+    "./src/**/*.ts"
+  ],
+	"exclude": [
+    "**/*.spec.ts",
+    "node_modules",
+	  "example"
+	]
+}
