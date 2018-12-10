@@ -1,63 +1,38 @@
-export type CallbackFn = (...args) => void;
-export type EventItem = {
-  callback: CallbackFn;
-  once?: boolean;
-};
-
-export type Events = {
-  [event: string]: EventItem[];
-}
-
 export class EventEmitter {
-  private events: Events = {};
+  private rootBus: HTMLElement;
+  private bus: HTMLElement;
 
-  on(event: string, callback: CallbackFn, once?: boolean): void {
-    if (this.events[event]) {
-      this.events[event].push({
-        callback,
-        once,
-      });
-    } else {
-      this.events[event] = [{
-        callback,
-        once,
-      }];
-    }
+  constructor() {
+    this.rootBus = document.createElement('div');
+    this.bus = document.createElement('div');
+    this.rootBus.appendChild(this.bus);
   }
 
-  once(event: string, callback: CallbackFn): void {
+  protected on(event: string, callback: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void {
+    this.bus.addEventListener(event, callback, options);
+  }
+
+  protected onRoot(event: string, callback: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void {
+    this.rootBus.addEventListener(event, callback, options);
+  }
+
+  protected once(event: string, callback: EventListenerOrEventListenerObject): void {
     this.on(event, callback, true);
   }
 
-  off(event: string, callback?: CallbackFn): void {
-    if (callback) {
-      if (!this.events[event]) {
-        return;
-      }
-
-      this.events[event].forEach((eventItem, index) => {
-        if (eventItem.callback === callback) {
-          this.deleteEventCallback(event, index);
-        }
-      });
-    } else {
-      this.events[event] = [];
-    }
+  protected onceRoot(event: string, callback: EventListenerOrEventListenerObject): void {
+    this.onRoot(event, callback, true);
   }
 
-  emit(event: string, ...args): void {
-    if (this.events[event]) {
-      this.events[event].forEach((eventItem, index) => {
-        eventItem.callback.apply(eventItem.callback, args);
-
-        if (eventItem.once) {
-          this.deleteEventCallback(event, index);
-        }
-      });
-    }
+  protected off(event: string, callback?: EventListenerOrEventListenerObject): void {
+    this.bus.removeEventListener(event, callback);
   }
 
-  private deleteEventCallback(event: string, cbIndex: number): void {
-    this.events[event].splice(cbIndex, 1);
+  protected offRoot(event: string, callback?: EventListenerOrEventListenerObject): void {
+    this.rootBus.removeEventListener(event, callback);
+  }
+
+  protected emit(event: CustomEvent): void {
+    this.bus.dispatchEvent(event);
   }
 }

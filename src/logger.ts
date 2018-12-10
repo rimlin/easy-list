@@ -1,4 +1,4 @@
-import { Environment } from 'interfaces/environment';
+import { Environment } from 'enums/environment';
 import { CurrentEnvironment } from 'config/environment';
 
 const addZero = (val) => val < 10 ? '0' + val : val;

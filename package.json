@@ -5,8 +5,12 @@
   "main": "index.js",
   "scripts": {
     "build": "rimraf dist && tsc",
-    "start:example": "rimraf example-dist && gulp --gulpfile gulpfile.example.js"
+    "start:example": "rimraf example-dist && gulp --gulpfile gulpfile.example.js",
+    "prepare": "npm run build"
   },
+  "files": [
+    "dist/*"
+  ],
   "author": "",
   "license": "ISC",
   "devDependencies": {

@@ -1,4 +1,4 @@
-import { Environment } from 'interfaces/environment';
+import { Environment } from 'enums/environment';
 
 // Determine environment
 let currEnv: Environment = Environment.PRODUCTION;

@@ -1,5 +1,3 @@
-import { isExists } from '../../src/utils';
+import {  } from '../../index';
 
 console.log('HELLO!')
-
-isExists(false);
