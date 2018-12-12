@@ -7,16 +7,16 @@ class a {
     private easyList: EasyList,
   ) {
     easyList.bind();
-    easyList.onReachBound(event => {
-      console.log('reach bound 1');
-    });
 
-    setTimeout(() => {
-      easyList.onReachBound(event => {
-        console.log('reach bound 2');
-        event.stopPropagation();
-      });
-    }, 500)
+    easyList.onReachBound(event => {
+      console.log('on reach bound', event)
+
+      event.waitUntil(new Promise(resolve => {
+        setTimeout(() => {
+          resolve()
+        }, 500)
+      }))
+    })
   }
 }
 

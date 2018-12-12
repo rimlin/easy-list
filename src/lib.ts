@@ -1,6 +1,5 @@
 import { EventEmitter } from './event-emitter';
 import { isExists } from './utils';
-import { Logger } from './logger';
 import { Handler, ReachBoundDirection } from './handler';
 
 export interface RawItem {
@@ -14,8 +13,8 @@ export interface Chunk extends RawItem {
 
 /**
  * onMount? - event after chunk rendered and mounted to list
+ * onUnmount? - event after chunk is unmounted from the list
  * onReachBound? - get template of chunk
- *
  */
 
 const mockChunk = {
@@ -36,7 +35,23 @@ export class EasyList extends Handler {
     super();
 
     this.onRootReachBound(event => {
-      console.log('finish root reach bound');
+      event.__onResolve(() => {
+        console.log('resolve root reach bound');
+      });
+
+      if (isExists(event.__isPending) === false) {
+        event.__resolve();
+      }
+    });
+
+    this.onRootRender(event => {
+      event.__onResolve(() => {
+        console.log('resolve root render');
+      });
+
+      if (isExists(event.__isPending) === false) {
+        event.__resolve();
+      }
     });
   }
 
@@ -46,12 +61,34 @@ export class EasyList extends Handler {
         direction: ReachBoundDirection.TO_BOTTOM,
         forwardChunks: [mockChunk],
       });
-    })
-    setTimeout(() => {
+
+      /*this.emitRender({
+        chunk: mockChunk,
+        renderedChunks: [mockChunk],
+      });
+
+      setTimeout(() => {
+        this.emitRender({
+          chunk: mockChunk,
+          renderedChunks: [mockChunk],
+        });
+      }, 300)
+      */
+
+     setTimeout(() => {
       this.emitReachBound({
         direction: ReachBoundDirection.TO_BOTTOM,
         forwardChunks: [mockChunk],
       });
-    }, 1000)
+    }, 600)
+    })
+  }
+
+  appendItems(items: RawItem[]): void {
+    console.log('prepend items', items);
+  }
+
+  prependItems(items: RawItem[]): void {
+    console.log('prepend items', items);
   }
 }

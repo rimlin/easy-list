@@ -1,94 +1,135 @@
-import { Chunk, RawItem } from './lib';
+import { Chunk } from './lib';
 import { EventEmitter } from './event-emitter';
+
+export type ExtendableEvent<T> = CustomEvent<T> & {
+  readonly waitUntil: (promise: Promise<any>) => void;
+  readonly __onResolve: (callback: () => void) => void;
+  readonly __resolve: () => void;
+  __isPending: boolean;
+};
 
 export enum ReachBoundDirection {
   TO_TOP,
   TO_BOTTOM,
 }
 
-export enum HandlerEventName {
+export enum HandlerEventType {
   MOUNT = 'mount',
   RENDER = 'render',
   REACH_BOUND = 'reach-bound',
 }
 
 export interface HandlerData {
-  chunk: Chunk;
-  renderedChunks: Chunk[];
+  readonly chunk: Chunk;
+  readonly renderedChunks: Chunk[];
 }
 
-export type HandlerMountData = HandlerData;
-export type HandlerMount = CustomEvent<HandlerMountData>;
+export interface HandlerReachBoundData {
+  readonly direction: ReachBoundDirection;
+  readonly forwardChunks: Chunk[];
+};
 
 export type HandlerRenderData = HandlerData;
-export type HandlerRender = CustomEvent<HandlerRenderData>;
+export type HandlerMountData = HandlerData;
 
-export interface HandlerReachBoundData {
-  direction: ReachBoundDirection;
-  forwardChunks: Chunk[];
-};
-export type HandlerReachBound =  CustomEvent<HandlerReachBoundData> & {
-  appendItems: (items: RawItem[]) => void;
-  prependItems: (items: RawItem[]) => void;
-};
+const supplyWaitUntil = <T>(customEvent): ExtendableEvent<T> => {
+  let callbacks = [];
+
+  const resolve = () => {
+    callbacks.forEach(cb => cb.call(cb));
+    callbacks = null;
+  };
+
+  customEvent.__onResolve = callback => {
+    if (callback instanceof Function) {
+      callbacks.push(callback);
+    }
+  };
+
+  customEvent.__resolve = resolve;
+
+  customEvent.waitUntil = promise => {
+    customEvent.__isPending = true;
+
+    promise.then(() => {
+      resolve();
+      customEvent.__isPending = false;
+    });
+  };
+
+  return customEvent;
+}
+
+export type BusyEvents = {
+  [handleEvent in HandlerEventType]: any[];
+}
 
 export class Handler extends EventEmitter {
+  private busyEvents: BusyEvents = {
+    [HandlerEventType.REACH_BOUND]: [],
+    [HandlerEventType.RENDER]: [],
+    [HandlerEventType.MOUNT]: [],
+  };
+
   constructor() {
     super();
   }
 
-  onReachBound(callback: (event: HandlerReachBound) => void) {
-    this.on(HandlerEventName.REACH_BOUND, callback);
+  onReachBound(callback: (event: ExtendableEvent<HandlerReachBoundData>) => void) {
+    this.on(HandlerEventType.REACH_BOUND, callback);
   }
 
-  onRender(callback: (event: HandlerRender) => void) {
-    this.on(HandlerEventName.RENDER, callback);
+  onRender(callback: (event: ExtendableEvent<HandlerRenderData>) => void) {
+    this.on(HandlerEventType.RENDER, callback);
   }
 
-  onMount(callback: (event: HandlerMount) => void) {
-    this.on(HandlerEventName.MOUNT, callback);
+  onMount(callback: (event: CustomEvent<HandlerMountData>) => void) {
+    this.on(HandlerEventType.MOUNT, callback);
   }
 
-  protected onRootReachBound(callback: (event: HandlerReachBound) => void) {
-    this.onRoot(HandlerEventName.REACH_BOUND, callback);
+  protected onRootReachBound(callback: (event: ExtendableEvent<HandlerReachBoundData>) => void) {
+    this.onRoot(HandlerEventType.REACH_BOUND, callback);
   }
 
-  protected onRootRender(callback: (event: HandlerReachBound) => void) {
-    this.onRoot(HandlerEventName.RENDER, callback);
+  protected onRootRender(callback: (event: ExtendableEvent<HandlerRenderData>) => void) {
+    this.onRoot(HandlerEventType.RENDER, callback);
   }
 
-  protected onRootMount(callback: (event: HandlerMount) => void) {
-    this.onRoot(HandlerEventName.MOUNT, callback);
+  protected onRootMount(callback: (event: CustomEvent<HandlerMountData>) => void) {
+    this.onRoot(HandlerEventType.MOUNT, callback);
   }
 
   protected emitReachBound(data: HandlerReachBoundData) {
-    const customEvent = new CustomEvent(HandlerEventName.REACH_BOUND, {
-      detail: data,
-      bubbles: true,
-    }) as HandlerReachBound;
+    if (this.busyEvents[HandlerEventType.REACH_BOUND].includes(data.direction)) {
+      return;
+    }
 
-    customEvent.appendItems = (items) => {
-      console.log('append items')
-    };
-
-    customEvent.prependItems = (item) => {
-      console.log('prepend items')
-    };
-
-    this.emit(customEvent);
-  }
-
-  protected emitRender(data: HandlerRenderData) {
-    const customEvent = new CustomEvent(HandlerEventName.RENDER, {
+    const customEvent = new CustomEvent<HandlerReachBoundData>(HandlerEventType.REACH_BOUND, {
       detail: data,
       bubbles: true,
     });
 
-    this.emit(customEvent);
+    const enhancedCustomEvent = supplyWaitUntil<HandlerRenderData>(customEvent);
+
+    enhancedCustomEvent.__onResolve(() => {
+      this.busyEvents[HandlerEventType.REACH_BOUND].splice(this.busyEvents[HandlerEventType.REACH_BOUND].indexOf(data.direction), 1);
+    });
+
+    this.busyEvents[HandlerEventType.REACH_BOUND].push(data.direction);
+    this.emit(enhancedCustomEvent);
+  }
+
+  protected emitRender(data: HandlerRenderData) {
+    const customEvent = new CustomEvent<HandlerRenderData>(HandlerEventType.RENDER, {
+      detail: data,
+      bubbles: true,
+    });
+
+    this.emit(supplyWaitUntil<HandlerRenderData>(customEvent));
   }
 
   protected emitMount(data: HandlerMountData) {
-    const customEvent = new CustomEvent(HandlerEventName.MOUNT, {
+    const customEvent = new CustomEvent<HandlerMountData>(HandlerEventType.MOUNT, {
       detail: data,
       bubbles: true,
     });
