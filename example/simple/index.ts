@@ -40,7 +40,9 @@ class a {
       }
     })
 
-
+    easyList.onUnmount(event => {
+      console.log('un mount happened', event.detail.chunk.id);
+    });
 
   }
 }

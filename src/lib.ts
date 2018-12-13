@@ -45,10 +45,19 @@ export class EasyListLib extends TaskRootHandler {
     this.onRootRender(event => {
       console.log('resolve root render', event.detail.chunk.id);
     });
+
+    this.onRootUnmount(event => {
+      console.log('root unmount happened', event.detail.chunk.id);
+    });
   }
 
   bind(): void {
     setTimeout(() => {
+      this.taskEmitter.emitUnmount({
+        chunk: mockChunk,
+        renderedChunks: [mockChunk],
+      });
+
       this.taskEmitter.emitRender({
         chunk: mockChunk,
         renderedChunks: [mockChunk],

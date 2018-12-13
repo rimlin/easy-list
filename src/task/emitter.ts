@@ -1,9 +1,9 @@
 import {
-  TaskType,
+  ExtendableEvent,
+  TaskMountData,
   TaskReachBoundData,
   TaskRenderData,
-  TaskMountData,
-  ExtendableEvent,
+  TaskType,
   TaskUnmountData,
 } from './interfaces';
 import { PriorityEvents } from '../services/priority-events';
@@ -37,7 +37,7 @@ const supplyWaitUntil = <T>(customEvent): ExtendableEvent<T> => {
 }
 
 export type BusyTasks = {
-  [handleEvent in TaskType]: any[];
+  [taskType in TaskType]: any[];
 }
 
 export class TaskEmitter {
