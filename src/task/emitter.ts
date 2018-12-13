@@ -7,19 +7,19 @@ import {
   TaskUnmountData,
 } from './interfaces';
 import { PriorityEvents } from '../services/priority-events';
+import { Eventer } from '../services/eventer';
+import { randString } from '../utils';
 
 const supplyWaitUntil = <T>(customEvent): ExtendableEvent<T> => {
-  let callbacks = [];
+  const eventName = randString(4);
 
   const resolve = () => {
-    callbacks.forEach(cb => cb.call(cb));
-    callbacks = null;
+    Eventer.emit(eventName);
+    Eventer.off(eventName);
   };
 
   customEvent.__onResolve = callback => {
-    if (callback instanceof Function) {
-      callbacks.push(callback);
-    }
+    Eventer.on(eventName, callback)
   };
 
   customEvent.__resolve = resolve;

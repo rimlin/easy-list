@@ -16,8 +16,13 @@ export interface Chunk extends RawItem {
 const mockChunk = {
   id: 0,
   data: {},
-  template: 'test',
-}
+  template: 'test1',
+};
+const mockChunk2 = {
+  id: 1,
+  data: {},
+  template: 'test2',
+};
 
 export class EasyListLib extends TaskRootHandler {
   private maxRenderedChunks = 5;
@@ -38,36 +43,37 @@ export class EasyListLib extends TaskRootHandler {
     });
 
     this.onRootRender(event => {
-      console.log('resolve root render');
+      console.log('resolve root render', event.detail.chunk.id);
     });
   }
 
   bind(): void {
     setTimeout(() => {
-      this.taskEmitter.emitReachBound({
-        direction: ReachBoundDirection.TO_BOTTOM,
-        forwardChunks: [mockChunk],
-      });
-
-      /*this.emitRender({
+      this.taskEmitter.emitRender({
         chunk: mockChunk,
         renderedChunks: [mockChunk],
       });
 
       setTimeout(() => {
-        this.emitRender({
-          chunk: mockChunk,
+        this.taskEmitter.emitRender({
+          chunk: mockChunk2,
           renderedChunks: [mockChunk],
         });
       }, 300)
-      */
 
-     setTimeout(() => {
+      /*
       this.taskEmitter.emitReachBound({
         direction: ReachBoundDirection.TO_BOTTOM,
         forwardChunks: [mockChunk],
       });
-    }, 600)
+
+      setTimeout(() => {
+        this.taskEmitter.emitReachBound({
+          direction: ReachBoundDirection.TO_BOTTOM,
+          forwardChunks: [mockChunk],
+        });
+      }, 300)
+      */
     })
   }
 
