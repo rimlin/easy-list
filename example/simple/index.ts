@@ -8,15 +8,25 @@ class a {
   ) {
     easyList.bind();
 
-    easyList.onReachBound(event => {
-      console.log('on reach bound', event)
+    var i = 0;
 
-      event.waitUntil(new Promise(resolve => {
-        setTimeout(() => {
-          resolve()
-        }, 500)
-      }))
+    easyList.onReachBound(event => {
+      if (i == 0) {
+        i++;
+        console.log('on reach bound with wait until')
+        event.waitUntil(new Promise(resolve => {
+          setTimeout(() => {
+            resolve()
+          }, 500)
+        }))
+      } else {
+
+        console.log('on reach bound simple')
+      }
     })
+
+
+
   }
 }
 

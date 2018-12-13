@@ -1,6 +1,8 @@
-import { EventEmitter } from './event-emitter';
+import { PriorityEvents } from './services/priority-events';
 import { isExists } from './utils';
-import { Handler, ReachBoundDirection } from './handler';
+import { ReachBoundDirection } from './task/interfaces';
+import { TaskEmitter } from './task/emitter';
+import { TaskRootHandler } from './task/root-handler';
 
 export interface RawItem {
   data: any;
@@ -11,19 +13,13 @@ export interface Chunk extends RawItem {
   id: number;
 }
 
-/**
- * onMount? - event after chunk rendered and mounted to list
- * onUnmount? - event after chunk is unmounted from the list
- * onReachBound? - get template of chunk
- */
-
 const mockChunk = {
   id: 0,
   data: {},
   template: 'test',
 }
 
-export class EasyList extends Handler {
+export class EasyListLib extends TaskRootHandler {
   private maxRenderedChunks = 5;
   private lastChunkIndex = 0;
 
@@ -31,17 +27,14 @@ export class EasyList extends Handler {
   private renderedChunks: number[] = [];
   private headRenderedChunkIndex: number = 0;
 
-  constructor() {
-    super();
+  constructor(
+    priorityEvents: PriorityEvents,
+    private taskEmitter: TaskEmitter,
+  ) {
+    super(priorityEvents);
 
     this.onRootReachBound(event => {
-      event.__onResolve(() => {
-        console.log('resolve root reach bound');
-      });
-
-      if (isExists(event.__isPending) === false) {
-        event.__resolve();
-      }
+      console.log('resolve root reach bound');
     });
 
     this.onRootRender(event => {
@@ -57,7 +50,7 @@ export class EasyList extends Handler {
 
   bind(): void {
     setTimeout(() => {
-      this.emitReachBound({
+      this.taskEmitter.emitReachBound({
         direction: ReachBoundDirection.TO_BOTTOM,
         forwardChunks: [mockChunk],
       });
@@ -76,7 +69,7 @@ export class EasyList extends Handler {
       */
 
      setTimeout(() => {
-      this.emitReachBound({
+      this.taskEmitter.emitReachBound({
         direction: ReachBoundDirection.TO_BOTTOM,
         forwardChunks: [mockChunk],
       });

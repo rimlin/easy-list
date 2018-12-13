@@ -25,6 +25,7 @@ const paths = {
 function bundle (browserify, dest) {
   return browserify
     .bundle()
+    .on('error', console.error)
     .pipe(source('index.js'))
     .pipe(gulp.dest(dest))
     .pipe(browserSync.reload({
