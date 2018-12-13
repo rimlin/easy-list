@@ -38,13 +38,7 @@ export class EasyListLib extends TaskRootHandler {
     });
 
     this.onRootRender(event => {
-      event.__onResolve(() => {
-        console.log('resolve root render');
-      });
-
-      if (isExists(event.__isPending) === false) {
-        event.__resolve();
-      }
+      console.log('resolve root render');
     });
   }
 

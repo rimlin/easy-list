@@ -53,15 +53,15 @@ export class TaskEmitter {
   ) {}
 
   emitReachBound(data: TaskReachBoundData) {
-    this.emit<TaskReachBoundData>(TaskType.REACH_BOUND, data, data.direction);
+    this.emitExtendableEvent<TaskReachBoundData>(TaskType.REACH_BOUND, data, data.direction);
   }
 
   emitRender(data: TaskRenderData) {
-    this.emit<TaskRenderData>(TaskType.RENDER, data, data.chunk.id);
+    this.emitExtendableEvent<TaskRenderData>(TaskType.RENDER, data, data.chunk.id);
   }
 
   emitMount(data: TaskMountData) {
-    this.emit<TaskMountData>(TaskType.MOUNT, data, data.chunk.id);
+    this.emitExtendableEvent<TaskMountData>(TaskType.MOUNT, data, data.chunk.id);
   }
 
   emitUnmount(data: TaskUnmountData) {
@@ -73,7 +73,7 @@ export class TaskEmitter {
     this.priorityEvents.emit(customEvent);
   }
 
-  private emit<T>(taskType: TaskType, data: T, marker) {
+  private emitExtendableEvent<T>(taskType: TaskType, data: T, marker) {
     if (this.busyTasks[taskType].includes(marker)) {
       return;
     }
