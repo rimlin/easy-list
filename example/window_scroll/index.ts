@@ -5,7 +5,7 @@ const randPicture = 'https://source.unsplash.com/random/800x600';
 let id = 0;
 
 const easyList = new EasyList({
-  strategy: createScrollStrategy('#parent'),
+  strategy: createScrollStrategy(),
 });
 
 const $feed = document.querySelector('#feed');
@@ -20,16 +20,6 @@ easyList.onReachBound(event => {
     data: item
   }]);
 })
-
-/*
-easyList.onRender(event => {
-  if (event.detail.chunk.data.id == 0) {
-    event.waitUntil(new Promise(resolve => {
-      setTimeout(() => resolve(), 2500);
-    }))
-  }
-})
-*/
 
 setTimeout(() => {
   const item = getItem();

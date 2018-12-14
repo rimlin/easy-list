@@ -35,6 +35,7 @@ class ScrollStrategy implements Strategy {
     const boundingBox = this.getBoundingBox();
 
     console.log(boundingBox);
+    console.log('---------------------')
   }
 
   private getBoundingBox(): BoundingBox {
@@ -46,13 +47,16 @@ class ScrollStrategy implements Strategy {
       const parentPos = this.$scrollContainer.getBoundingClientRect();
       const childrenPos = this.$chunksContainer.getBoundingClientRect();
 
+      console.log('parent', parentPos);
+      console.log('children', childrenPos);
+
       boundingBox = {
         top: childrenPos.top - parentPos.top,
         right: childrenPos.right - parentPos.right,
-        bottom: childrenPos.bottom - parentPos.bottom,
+        bottom: childrenPos.bottom - parentPos.bottom + parentPos.height,
         left: childrenPos.left - parentPos.left,
-        height: childrenPos.height - parentPos.height,
-        width: childrenPos.width - parentPos.width,
+        height: childrenPos.height,
+        width: childrenPos.width,
       };
     }
 

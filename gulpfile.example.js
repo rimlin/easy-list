@@ -36,6 +36,7 @@ function bundle (browserify, dest) {
 const files = [
   './example/simple/index.ts',
   './example/shadow/index.ts',
+  './example/window_scroll/index.ts',
 ];
 
 var tsBuildTasks = files.map(function(entry) {
