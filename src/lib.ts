@@ -32,8 +32,8 @@ const mockChunk2 = {
 };
 
 export class EasyListLib extends TaskRootHandler {
+  private strategy: Strategy;
   private $target: Element;
-  private options: EasyListOptions;
 
   private maxRenderedChunks = 5;
   private lastChunkId = 0;
@@ -44,6 +44,7 @@ export class EasyListLib extends TaskRootHandler {
   private headRenderedChunkIndex: number = 0;
 
   constructor(
+    private options: EasyListOptions,
     priorityEvents: PriorityEvents,
     private taskEmitter: TaskEmitter,
   ) {
@@ -62,9 +63,8 @@ export class EasyListLib extends TaskRootHandler {
     });
   }
 
-  bind($target: Element, options: EasyListOptions): void {
+  bind($target: Element): void {
     this.$target = $target;
-    this.options = options;
 
     this.setupStrategy();
   }
@@ -138,9 +138,9 @@ export class EasyListLib extends TaskRootHandler {
 
   private insertChunkEl(chunkIndex: number, $chunkEl: $ChunkEl): void {
     if (chunkIndex === 0) {
-      this.$target.prepend($chunkEl);
+      this.getChunksContainer().prepend($chunkEl);
     } else if (this.renderedChunks.length === 0) {
-      this.$target.appendChild($chunkEl);
+      this.getChunksContainer().appendChild($chunkEl);
     } else {
       let $prevChunk = this.getTailChunkEl();
       let $targetChunkEl: $ChunkEl;
@@ -169,7 +169,7 @@ export class EasyListLib extends TaskRootHandler {
   }
 
   private removeChunk(chunk: Chunk): void {
-    const $chunkEl = this.$target.querySelector(`[data-id=${chunk.id}]`);
+    const $chunkEl = this.getChunksContainer().querySelector(`[data-id=${chunk.id}]`);
 
     if ($chunkEl) {
       $chunkEl.remove();
@@ -182,7 +182,11 @@ export class EasyListLib extends TaskRootHandler {
   }
 
   private getTailChunkEl(): $ChunkEl {
-    return this.$target.lastElementChild as $ChunkEl;
+    return this.getChunksContainer().lastElementChild as $ChunkEl;
+  }
+
+  private getChunksContainer(): Element {
+    return this.strategy.$chunksContainer;
   }
 
   private calcTree(): void {
@@ -190,7 +194,7 @@ export class EasyListLib extends TaskRootHandler {
   }
 
   private setupStrategy(): void {
-    const strategy = this.options.strategy(this.$target);
+    this.strategy = this.options.strategy(this.$target);
 
     setTimeout(() => {
       this.taskEmitter.emitReachBound({

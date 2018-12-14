@@ -15,24 +15,24 @@ export class EasyList {
   private easyList: EasyListLib;
   private taskChildHandler: TaskChildHandler;
 
-  constructor() {
+  constructor(options: EasyListOptions = {}) {
     const priorityEvents = new PriorityEvents();
     const taskEmitter = new TaskEmitter(priorityEvents);
-
-    this.easyList = new EasyListLib(priorityEvents, taskEmitter);
-    this.taskChildHandler = new TaskChildHandler(priorityEvents);
-  }
-
-  bind(element: Element | string, options: EasyListOptions = {}) {
-    if (typeof element === 'string') {
-      element = document.querySelector(element);
-    }
 
     if (!options.strategy) {
       options.strategy = createScrollStrategy();
     }
 
-    this.easyList.bind(element, options);
+    this.easyList = new EasyListLib(options, priorityEvents, taskEmitter);
+    this.taskChildHandler = new TaskChildHandler(priorityEvents);
+  }
+
+  bind($target: Element | string) {
+    if (typeof $target === 'string') {
+      $target = document.querySelector($target);
+    }
+
+    this.easyList.bind($target);
   }
 
   appendItems(items: RawItem[]): void {

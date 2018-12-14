@@ -1,4 +1,5 @@
 export interface Strategy {
+  $chunksContainer: Element;
   destroy(): void;
 }
 

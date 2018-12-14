@@ -1,9 +1,12 @@
 import { EasyList } from '../../index';
+import { createScrollStrategy } from '../../src/strategy/scroll';
 
 const randPicture = 'https://source.unsplash.com/random/800x600';
 let id = 0;
 
-const easyList = new EasyList();
+const easyList = new EasyList({
+  strategy: createScrollStrategy('#feed'),
+});
 
 const $feed = document.querySelector('#feed');
 

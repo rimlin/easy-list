@@ -1,14 +1,30 @@
 import { Strategy, ScrollStrategyFactory } from './interfaces';
 
+export type BoundingBox = ClientRect | DOMRect;
+
 class ScrollStrategy implements Strategy {
-  constructor(private $target: Element) {
+  $chunksContainer: Element;
+
+  constructor(
+    private $scrollContainer: Element | Window,
+    private $target: Element
+  ) {
+    if ($target === $scrollContainer) {
+      $target.innerHTML = '<div></div>';
+      this.$chunksContainer = $target.firstElementChild;
+    } else {
+      this.$chunksContainer = $target;
+    }
+
     this.check();
 
-    window.addEventListener('scroll', this.onScroll);
+    this.$scrollContainer.addEventListener('scroll', this.onScroll, {
+      passive: true,
+    });
   }
 
   destroy(): void {
-    window.removeEventListener('scroll', this.onScroll);
+    this.$scrollContainer.removeEventListener('scroll', this.onScroll);
   }
 
   private onScroll = () => {
@@ -16,13 +32,40 @@ class ScrollStrategy implements Strategy {
   }
 
   private check(): void {
-    const bounding = this.$target.getBoundingClientRect();
-    console.log(bounding);
+    const boundingBox = this.getBoundingBox();
+
+    console.log(boundingBox);
+  }
+
+  private getBoundingBox(): BoundingBox {
+    let boundingBox: BoundingBox;
+
+    if (this.$scrollContainer instanceof Window) {
+      boundingBox = this.$chunksContainer.getBoundingClientRect();
+    } else {
+      const parentPos = this.$scrollContainer.getBoundingClientRect();
+      const childrenPos = this.$chunksContainer.getBoundingClientRect();
+
+      boundingBox = {
+        top: childrenPos.top - parentPos.top,
+        right: childrenPos.right - parentPos.right,
+        bottom: childrenPos.bottom - parentPos.bottom,
+        left: childrenPos.left - parentPos.left,
+        height: childrenPos.height - parentPos.height,
+        width: childrenPos.width - parentPos.width,
+      };
+    }
+
+    return boundingBox;
   }
 }
 
-export function createScrollStrategy(): ScrollStrategyFactory {
+export function createScrollStrategy($scrollContainer: string | Element | Window = window): ScrollStrategyFactory {
+  if (typeof $scrollContainer === 'string') {
+    $scrollContainer = document.querySelector($scrollContainer);
+  }
+
   return $target => {
-    return new ScrollStrategy($target);
+    return new ScrollStrategy($scrollContainer as Element | Window, $target);
   }
 }
