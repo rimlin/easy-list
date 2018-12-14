@@ -14,11 +14,31 @@ easyList.onReachBound(event => {
 
   easyList.appendItems([{
     template: getItemTemplate(item),
-  }])
+    data: item
+  }]);
 })
 
+/*
+easyList.onRender(event => {
+  if (event.detail.chunk.data.id == 0) {
+    event.waitUntil(new Promise(resolve => {
+      setTimeout(() => resolve(), 2500);
+    }))
+  }
+})
+*/
+
+setTimeout(() => {
+  const item = getItem();
+
+  easyList.prependItems([{
+    template: getItemTemplate(item),
+    data: item
+  }]);
+}, 500);
+
 function getItem() {
-  const newId = ++id;
+  const newId = id++;
 
   return {
     image: `${randPicture}?sig=${newId}`,

@@ -1,4 +1,4 @@
-import { Chunk } from '../lib';
+import { Chunk, $ChunkEl } from '../lib';
 
 export type ExtendableEvent<T> = CustomEvent<T> & {
   readonly waitUntil: (promise: Promise<any>) => void;
@@ -34,7 +34,7 @@ export type TaskRenderData = {
 };
 
 export type TaskMountData = TaskData & {
-  $el: HTMLElement;
+  $el: $ChunkEl;
 };
 
 export type TaskUnmountData = TaskData;

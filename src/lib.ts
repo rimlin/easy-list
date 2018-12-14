@@ -18,6 +18,8 @@ export interface Chunk extends RawItem {
   id: number;
 }
 
+export type $ChunkEl = HTMLDivElement;
+
 const mockChunk = {
   id: 0,
   data: {},
@@ -37,6 +39,7 @@ export class EasyListLib extends TaskRootHandler {
   private lastChunkId = 0;
 
   private chunks: Chunk[] = [];
+  private chunksToRender: Chunk[] = [];
   private renderedChunks: Chunk[] = [];
   private headRenderedChunkIndex: number = 0;
 
@@ -81,39 +84,50 @@ export class EasyListLib extends TaskRootHandler {
   }
 
   private renderTree(): void {
-    const chunksToRender = this.chunks.slice(this.headRenderedChunkIndex, this.maxRenderedChunks);
-    const keepChunkIds: number[] = [];
+    const newChunksToRender = this.chunks.slice(this.headRenderedChunkIndex, this.maxRenderedChunks);
+    const keepChunks: Chunk[] = [];
 
-    chunksToRender.forEach(chunk => {
-      if (this.renderedChunks.find(renderedChunk => renderedChunk.id === chunk.id)) {
-        keepChunkIds.push(chunk.id);
+    // Get old chunks, that need to keep in tree
+    newChunksToRender.forEach(chunk => {
+      if (this.chunksToRender.find(renderedChunk => renderedChunk.id === chunk.id)) {
+        keepChunks.push(chunk);
       }
     });
 
-    this.renderedChunks.forEach(renderedChunk => {
-      if (keepChunkIds.includes(renderedChunk.id) === false) {
+    const isKeepChunk = (chunkId) => keepChunks.findIndex(chunk => chunk.id === chunkId) !== -1;
+
+    // Remove chunks that not needed now
+    this.chunksToRender.forEach(renderedChunk => {
+      if (isKeepChunk(renderedChunk.id) === false) {
         this.removeChunk(renderedChunk);
       }
     });
 
-    chunksToRender.forEach(chunk => {
-      if (keepChunkIds.includes(chunk.id) === false) {
+    this.renderedChunks = keepChunks;
+    this.chunksToRender = newChunksToRender;
+
+    // Render new chunks
+    newChunksToRender.forEach(chunk => {
+      if (isKeepChunk(chunk.id) === false) {
         this.taskEmitter.emitRender({
           chunk,
         });
       }
     });
-
-    this.renderedChunks = chunksToRender;
   }
 
   private renderChunk(chunk: Chunk): void {
+    const chunkIndex = this.chunksToRender.findIndex(renderChunk => renderChunk.id === chunk.id);
+
+    if (chunkIndex === -1) {
+      return;
+    }
+
     const $chunkEl = document.createElement('div');
     $chunkEl.dataset['chunk'] = chunk.id.toString();
     $chunkEl.innerHTML = chunk.template;
 
-    // In future need check order of chunk in chunks array
-    this.$target.appendChild($chunkEl);
+    this.insertChunkEl(chunkIndex, $chunkEl);
 
     this.taskEmitter.emitMount({
       $el: $chunkEl,
@@ -122,8 +136,40 @@ export class EasyListLib extends TaskRootHandler {
     });
   }
 
+  private insertChunkEl(chunkIndex: number, $chunkEl: $ChunkEl): void {
+    if (chunkIndex === 0) {
+      this.$target.prepend($chunkEl);
+    } else if (this.renderedChunks.length === 0) {
+      this.$target.appendChild($chunkEl);
+    } else {
+      let $prevChunk = this.getTailChunkEl();
+      let $targetChunkEl: $ChunkEl;
+
+      while($prevChunk) {
+        const chunkId = +$prevChunk.dataset['id'];
+
+        // Check chunksToRender collection to find index of rendered chunk between
+        // chunks, which will be render
+        const renderedChunkIndex = this.chunksToRender.findIndex(renderChunk => renderChunk.id === chunkId);
+
+        if (chunkIndex > renderedChunkIndex) {
+          $targetChunkEl = $prevChunk;
+          break;
+        }
+
+        $prevChunk = $prevChunk.previousElementSibling as $ChunkEl;
+      }
+
+      if ($targetChunkEl) {
+        $targetChunkEl.after($chunkEl);
+      } else {
+        $prevChunk.before($chunkEl);
+      }
+    }
+  }
+
   private removeChunk(chunk: Chunk): void {
-    const $chunkEl = this.$target.querySelector(`[data-chunk=${chunk.id}]`);
+    const $chunkEl = this.$target.querySelector(`[data-id=${chunk.id}]`);
 
     if ($chunkEl) {
       $chunkEl.remove();
@@ -133,6 +179,10 @@ export class EasyListLib extends TaskRootHandler {
         renderedChunks: this.renderedChunks,
       });
     }
+  }
+
+  private getTailChunkEl(): $ChunkEl {
+    return this.$target.lastElementChild as $ChunkEl;
   }
 
   private calcTree(): void {
@@ -152,7 +202,8 @@ export class EasyListLib extends TaskRootHandler {
 
   private convertItemsToChunks(items: RawItem[]): Chunk[] {
     return items.map((item, index) => ({
-      ...item,
+      data: item.data,
+      template: item.template,
       id: this.lastChunkId++,
     }));
   }
