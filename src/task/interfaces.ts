@@ -29,6 +29,12 @@ export interface TaskReachBoundData {
   readonly forwardChunks: Chunk[];
 };
 
-export type TaskRenderData = TaskData;
-export type TaskMountData = TaskData;
+export type TaskRenderData = {
+  readonly chunk: Chunk;
+};
+
+export type TaskMountData = TaskData & {
+  $el: HTMLElement;
+};
+
 export type TaskUnmountData = TaskData;

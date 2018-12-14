@@ -1,50 +1,34 @@
 import { EasyList } from '../../index';
 
-class a {
-  readonly cbec: boolean;
+const randPicture = 'https://source.unsplash.com/random/800x600';
+let id = 0;
 
-  constructor(
-    private easyList: EasyList,
-  ) {
-    easyList.bind();
+const easyList = new EasyList();
 
-    var i = 0;
+const $feed = document.querySelector('#feed');
 
-    easyList.onReachBound(event => {
-      if (i == 0) {
-        i++;
-        console.log('on reach bound with wait until 500ms')
-        event.waitUntil(new Promise(resolve => {
-          setTimeout(() => {
-            resolve()
-          }, 500)
-        }))
-      } else {
+easyList.bind($feed);
 
-        console.log('on reach bound simple')
-      }
-    })
+easyList.onReachBound(event => {
+  const item = getItem();
 
-    easyList.onRender(event => {
-      if (i == 0) {
-        i++;
-        console.log('on render with wait until 500ms', event.detail.chunk.id)
-        event.waitUntil(new Promise(resolve => {
-          setTimeout(() => {
-            resolve()
-          }, 500)
-        }))
-      } else {
+  easyList.appendItems([{
+    template: getItemTemplate(item),
+  }])
+})
 
-        console.log('on render simple', event.detail.chunk.id)
-      }
-    })
+function getItem() {
+  const newId = ++id;
 
-    easyList.onUnmount(event => {
-      console.log('un mount happened', event.detail.chunk.id);
-    });
-
-  }
+  return {
+    image: `${randPicture}?sig=${newId}`,
+    id: newId,
+  };
 }
 
-new a(new EasyList());
+function getItemTemplate(item) {
+  return `<div>
+    <h1>Picture ${item.id}</h1>
+    <img src="${item.image}" />
+  </div>`;
+}
