@@ -1,6 +1,6 @@
 import { PriorityEvents } from './services/priority-events';
 import { isExists } from './utils';
-import { ReachBoundDirection } from './task/interfaces';
+import { MoveDirection } from './task/interfaces';
 import { TaskEmitter } from './task/emitter';
 import { TaskRootHandler } from './task/root-handler';
 import { Strategy, StrategyFactory } from 'strategy/interfaces';
@@ -51,7 +51,17 @@ export class EasyListLib extends TaskRootHandler {
     super(priorityEvents);
 
     this.onRootReachBound(event => {
-      console.log('resolve root reach bound');
+      if (event.detail.direction === MoveDirection.TO_BOTTOM) {
+        if (event.detail.forwardChunks.length > 0) {
+          this.headRenderedChunkIndex++;
+        }
+      }
+
+      if (event.detail.direction === MoveDirection.TO_TOP) {
+        if (event.detail.forwardChunks.length > 0) {
+          this.headRenderedChunkIndex--
+        }
+      }
     });
 
     this.onRootRender(event => {
@@ -197,20 +207,23 @@ export class EasyListLib extends TaskRootHandler {
     this.strategy = this.options.strategy(this.$target);
 
     this.strategy.onMove(info => {
-      if (info.remainingDistance < 300) {
+      if (info.remainingDistance < 300 && info.direction === MoveDirection.TO_BOTTOM) {
+        let forwardChunks;
+
+        if (info.direction === MoveDirection.TO_BOTTOM) {
+          forwardChunks = this.chunks.slice(this.headRenderedChunkIndex + this.chunksToRender.length);
+        } else if (info.direction === MoveDirection.TO_TOP) {
+          forwardChunks = this.chunks.slice(0, this.headRenderedChunkIndex);
+        } else {
+          throw new Error('Undefined direction');
+        }
+
         this.taskEmitter.emitReachBound({
           direction: info.direction,
-          forwardChunks: [],
+          forwardChunks,
         });
       }
     });
-
-    setTimeout(() => {
-      this.taskEmitter.emitReachBound({
-        direction: ReachBoundDirection.TO_BOTTOM,
-        forwardChunks: [],
-      });
-    })
   }
 
   private convertItemsToChunks(items: RawItem[]): Chunk[] {

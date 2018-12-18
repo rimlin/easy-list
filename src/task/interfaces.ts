@@ -7,7 +7,7 @@ export type ExtendableEvent<T> = CustomEvent<T> & {
   __isPending: boolean;
 };
 
-export enum ReachBoundDirection {
+export enum MoveDirection {
   TO_TOP,
   TO_BOTTOM,
 }
@@ -25,7 +25,7 @@ export interface TaskData {
 }
 
 export interface TaskReachBoundData {
-  readonly direction: ReachBoundDirection;
+  readonly direction: MoveDirection;
   readonly forwardChunks: Chunk[];
 };
 

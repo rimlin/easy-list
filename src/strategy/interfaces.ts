@@ -1,7 +1,7 @@
-import { ReachBoundDirection } from '../task/interfaces';
+import { MoveDirection } from '../task/interfaces';
 
 export interface StrategyMoveInfo {
-  direction: ReachBoundDirection;
+  direction: MoveDirection;
   remainingDistance: number;
 }
 

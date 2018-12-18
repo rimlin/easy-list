@@ -1,6 +1,6 @@
 import { Strategy, StrategyFactory, StrategyMoveInfo } from './interfaces';
 import { Eventer } from '../services/eventer';
-import { ReachBoundDirection } from '../task/interfaces';
+import { MoveDirection } from '../task/interfaces';
 
 export type BoundingBox = ClientRect | DOMRect;
 
@@ -47,9 +47,9 @@ class ScrollStrategy implements Strategy {
     const direction = this.getVerticalDirection();
     let remainingDistance: number;
 
-    if (direction === ReachBoundDirection.TO_BOTTOM) {
+    if (direction === MoveDirection.TO_BOTTOM) {
       remainingDistance = boundingBox.bottom - viewHeight;
-    } else if (direction === ReachBoundDirection.TO_TOP) {
+    } else if (direction === MoveDirection.TO_TOP) {
       remainingDistance = Math.abs(boundingBox.top);
     } else {
       throw new Error('Undefined direction');
@@ -85,8 +85,8 @@ class ScrollStrategy implements Strategy {
     return boundingBox;
   }
 
-  private getVerticalDirection(): ReachBoundDirection {
-    let direction: ReachBoundDirection;
+  private getVerticalDirection(): MoveDirection {
+    let direction: MoveDirection;
     let currentY: number;
 
     if (this.$scrollContainer instanceof Window) {
@@ -96,9 +96,9 @@ class ScrollStrategy implements Strategy {
     }
 
     if (currentY > this.lastYCoord) {
-      direction = ReachBoundDirection.TO_BOTTOM;
+      direction = MoveDirection.TO_BOTTOM;
     } else {
-      direction = ReachBoundDirection.TO_TOP;
+      direction = MoveDirection.TO_TOP;
     }
 
     this.lastYCoord = currentY;
