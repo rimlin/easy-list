@@ -3,10 +3,10 @@ import { isExists } from './utils';
 import { ReachBoundDirection } from './task/interfaces';
 import { TaskEmitter } from './task/emitter';
 import { TaskRootHandler } from './task/root-handler';
-import { Strategy, ScrollStrategyFactory } from 'strategy/interfaces';
+import { Strategy, StrategyFactory } from 'strategy/interfaces';
 
 export interface EasyListOptions {
-  strategy?: ScrollStrategyFactory;
+  strategy?: StrategyFactory;
 }
 
 export interface RawItem {
@@ -195,6 +195,15 @@ export class EasyListLib extends TaskRootHandler {
 
   private setupStrategy(): void {
     this.strategy = this.options.strategy(this.$target);
+
+    this.strategy.onMove(info => {
+      if (info.remainingDistance < 300) {
+        this.taskEmitter.emitReachBound({
+          direction: info.direction,
+          forwardChunks: [],
+        });
+      }
+    });
 
     setTimeout(() => {
       this.taskEmitter.emitReachBound({
