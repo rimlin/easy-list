@@ -62,6 +62,8 @@ export class EasyListLib extends TaskRootHandler {
           this.headRenderedChunkIndex--
         }
       }
+
+      this.renderTree();
     });
 
     this.onRootRender(event => {
@@ -94,12 +96,12 @@ export class EasyListLib extends TaskRootHandler {
   }
 
   private renderTree(): void {
-    const newChunksToRender = this.chunks.slice(this.headRenderedChunkIndex, this.maxRenderedChunks);
+    const newChunksToRender = this.chunks.slice(this.headRenderedChunkIndex, this.headRenderedChunkIndex + this.maxRenderedChunks);
     const keepChunks: Chunk[] = [];
 
     // Get old chunks, that need to keep in tree
     newChunksToRender.forEach(chunk => {
-      if (this.chunksToRender.find(renderedChunk => renderedChunk.id === chunk.id)) {
+      if (this.chunksToRender.find(chunkToRender => chunkToRender.id === chunk.id)) {
         keepChunks.push(chunk);
       }
     });
@@ -113,7 +115,6 @@ export class EasyListLib extends TaskRootHandler {
       }
     });
 
-    this.renderedChunks = keepChunks;
     this.chunksToRender = newChunksToRender;
 
     // Render new chunks
@@ -139,6 +140,8 @@ export class EasyListLib extends TaskRootHandler {
 
     this.insertChunkEl(chunkIndex, $chunkEl);
 
+    this.renderedChunks.push(chunk);
+
     this.taskEmitter.emitMount({
       $el: $chunkEl,
       chunk,
@@ -158,11 +161,11 @@ export class EasyListLib extends TaskRootHandler {
       while($prevChunk) {
         const chunkId = +$prevChunk.dataset['id'];
 
-        // Check chunksToRender collection to find index of rendered chunk between
-        // chunks, which will be render
-        const renderedChunkIndex = this.chunksToRender.findIndex(renderChunk => renderChunk.id === chunkId);
+        // Check chunksToRender collection to find index of future rendered chunk
+        // between chunks, which will be render
+        const chunkToRenderIndex = this.chunksToRender.findIndex(chunkToRender => chunkToRender.id === chunkId);
 
-        if (chunkIndex > renderedChunkIndex) {
+        if (chunkIndex > chunkToRenderIndex) {
           $targetChunkEl = $prevChunk;
           break;
         }
@@ -179,10 +182,12 @@ export class EasyListLib extends TaskRootHandler {
   }
 
   private removeChunk(chunk: Chunk): void {
-    const $chunkEl = this.getChunksContainer().querySelector(`[data-id=${chunk.id}]`);
+    const $chunkEl = this.getChunkEl(chunk);
 
     if ($chunkEl) {
       $chunkEl.remove();
+
+      this.renderedChunks.splice(this.renderedChunks.indexOf(chunk), 1);
 
       this.taskEmitter.emitUnmount({
         chunk,
@@ -207,16 +212,15 @@ export class EasyListLib extends TaskRootHandler {
     this.strategy = this.options.strategy(this.$target);
 
     this.strategy.onMove(info => {
-      if (info.remainingDistance < 300 && info.direction === MoveDirection.TO_BOTTOM) {
-        let forwardChunks;
+      if (info.direction === MoveDirection.TO_BOTTOM && info.remainingDistance < 300) {
+        const forwardChunks = this.chunks.slice(this.headRenderedChunkIndex + this.chunksToRender.length);
 
-        if (info.direction === MoveDirection.TO_BOTTOM) {
-          forwardChunks = this.chunks.slice(this.headRenderedChunkIndex + this.chunksToRender.length);
-        } else if (info.direction === MoveDirection.TO_TOP) {
-          forwardChunks = this.chunks.slice(0, this.headRenderedChunkIndex);
-        } else {
-          throw new Error('Undefined direction');
-        }
+        this.taskEmitter.emitReachBound({
+          direction: info.direction,
+          forwardChunks,
+        });
+      } else if (info.direction === MoveDirection.TO_TOP && info.remainingDistance < 300) {
+        const forwardChunks = this.chunks.slice(0, this.headRenderedChunkIndex);
 
         this.taskEmitter.emitReachBound({
           direction: info.direction,
@@ -224,6 +228,13 @@ export class EasyListLib extends TaskRootHandler {
         });
       }
     });
+
+    setTimeout(() => {
+      this.taskEmitter.emitReachBound({
+        direction: MoveDirection.TO_BOTTOM,
+        forwardChunks: [],
+      });
+    })
   }
 
   private convertItemsToChunks(items: RawItem[]): Chunk[] {
@@ -232,5 +243,17 @@ export class EasyListLib extends TaskRootHandler {
       template: item.template,
       id: this.lastChunkId++,
     }));
+  }
+
+  private getChunkEl(chunk: Chunk): $ChunkEl {
+    let $chunkEl: $ChunkEl;
+
+    Array.from(this.getChunksContainer().children).forEach(($el: $ChunkEl) => {
+      if ($el.dataset['chunk'] === chunk.id.toString()) {
+        $chunkEl = $el;
+      }
+    });
+
+    return $chunkEl;
   }
 }
