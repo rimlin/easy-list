@@ -44,10 +44,20 @@ class ScrollStrategy implements Strategy {
   private check(): void {
     const boundingBox = this.getBoundingBox();
     const viewHeight = this.getViewHeight();
+    const direction = this.getVerticalDirection();
+    let remainingDistance: number;
+
+    if (direction === ReachBoundDirection.TO_BOTTOM) {
+      remainingDistance = boundingBox.bottom - viewHeight;
+    } else if (direction === ReachBoundDirection.TO_TOP) {
+      remainingDistance = Math.abs(boundingBox.top);
+    } else {
+      throw new Error('Undefined direction');
+    }
 
     const info: StrategyMoveInfo = {
-      direction: this.getVerticalDirection(),
-      remainingDistance: boundingBox.bottom - viewHeight,
+      direction,
+      remainingDistance,
     };
 
     Eventer.emit(moveEvent, info);
