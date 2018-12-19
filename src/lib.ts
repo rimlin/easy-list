@@ -214,8 +214,12 @@ export class EasyListLib extends TaskRootHandler {
   private calcChunkHeight(chunk: Chunk): void {
     const $el = this.getChunkEl(chunk);
 
+    const elHeight = Math.max(
+      $el.offsetHeight, $el.clientHeight, $el.scrollHeight
+    );
+
     this.updateChunk(chunk, {
-      height: $el.offsetHeight,
+      height: elHeight,
     });
   }
 
@@ -226,8 +230,8 @@ export class EasyListLib extends TaskRootHandler {
     const offsetTop = headRenderedChunks.reduce((offset, chunk) => offset + chunk.height, 0);
     const offsetBottom = tailRenderedChunks.reduce((offset, chunk) => offset + chunk.height, 0);
 
-    this.getChunksContainer().style.paddingTop = `${offsetTop}px`;
-    this.getChunksContainer().style.paddingBottom = `${offsetBottom}px`;
+    this.$target.style.paddingTop = `${offsetTop}px`;
+    this.$target.style.paddingBottom = `${offsetBottom}px`;
   }
 
   private setupStrategy(): void {

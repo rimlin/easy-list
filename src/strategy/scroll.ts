@@ -15,12 +15,9 @@ class ScrollStrategy implements Strategy {
     private $scrollContainer: HTMLElement | Window,
     private $target: HTMLElement
   ) {
-    if ($target === $scrollContainer) {
-      $target.innerHTML = '<div></div>';
-      this.$chunksContainer = $target.firstElementChild as HTMLElement;
-    } else {
-      this.$chunksContainer = $target;
-    }
+    $target.innerHTML = `<div></div>`;
+
+    this.$chunksContainer = $target.firstElementChild as HTMLElement;
 
     this.check();
 
@@ -42,15 +39,15 @@ class ScrollStrategy implements Strategy {
   }
 
   private check(): void {
-    const boundingBox = this.getBoundingBox();
-    const viewHeight = this.getViewHeight();
+    const scrollBox = this.getScrollBox();
+    const chunksBox = this.getChunksBox();
     const direction = this.getVerticalDirection();
     let remainingDistance: number;
 
     if (direction === MoveDirection.TO_BOTTOM) {
-      remainingDistance = boundingBox.bottom - viewHeight;
+      remainingDistance = chunksBox.bottom;
     } else if (direction === MoveDirection.TO_TOP) {
-      remainingDistance = Math.abs(boundingBox.top);
+      remainingDistance = Math.abs(chunksBox.top);
     } else {
       throw new Error('Undefined direction');
     }
@@ -61,28 +58,6 @@ class ScrollStrategy implements Strategy {
     };
 
     Eventer.emit(moveEvent, info);
-  }
-
-  private getBoundingBox(): BoundingBox {
-    let boundingBox: BoundingBox;
-
-    if (this.$scrollContainer instanceof Window) {
-      boundingBox = this.$chunksContainer.getBoundingClientRect();
-    } else {
-      const parentPos = this.$scrollContainer.getBoundingClientRect();
-      const childrenPos = this.$chunksContainer.getBoundingClientRect();
-
-      boundingBox = {
-        top: childrenPos.top - parentPos.top,
-        right: childrenPos.right,
-        bottom: childrenPos.bottom - parentPos.bottom + parentPos.height,
-        left: childrenPos.left - parentPos.left,
-        height: childrenPos.height,
-        width: childrenPos.width,
-      };
-    }
-
-    return boundingBox;
   }
 
   private getVerticalDirection(): MoveDirection {
@@ -106,20 +81,68 @@ class ScrollStrategy implements Strategy {
     return direction;
   }
 
-  private getViewHeight(): number {
-    let height: number;
+  /**
+   * Box where is placed chunks box and considering paddings of $target
+   */
+  private getScrollBox(): BoundingBox {
+    const viewportBox = this.getViewportBox();
+    const targetBox = this.$target.getBoundingClientRect();
 
+    return {
+      top: targetBox.top - viewportBox.top,
+      right: targetBox.right,
+      bottom: targetBox.bottom - viewportBox.bottom,
+      left: targetBox.left - viewportBox.left,
+      height: targetBox.height,
+      width: targetBox.width,
+    };
+  }
+
+  /**
+   * Box with rendered chunks
+   */
+  private getChunksBox(): BoundingBox {
+    const viewportBox = this.getViewportBox();
+    const chunksBox = this.$chunksContainer.getBoundingClientRect();
+
+    return {
+      top: chunksBox.top - viewportBox.top,
+      right: chunksBox.right,
+      bottom: chunksBox.bottom - viewportBox.bottom,
+      left: chunksBox.left - viewportBox.left,
+      height: chunksBox.height,
+      width: chunksBox.width,
+    };
+  }
+
+  /**
+   * Box of viewport
+   */
+  private getViewportBox(): BoundingBox {
     if (this.$scrollContainer instanceof Window) {
-      height = Math.min(
-        document.body.clientHeight, document.documentElement.clientHeight
-      );
+      return {
+        top: 0,
+        right: this.getWindowWidth(),
+        bottom: this.getWindowHeight(),
+        left: 0,
+        height: this.getWindowHeight(),
+        width: this.getWindowWidth(),
+      }
     } else {
-      height = Math.max(
-        this.$scrollContainer.offsetHeight, this.$scrollContainer.clientHeight,
-      );
+      return this.$scrollContainer.getBoundingClientRect();
     }
+  }
 
-    return height;
+  private getWindowWidth(): number {
+    return Math.min(
+      document.body.clientWidth, document.documentElement.clientWidth
+    );
+  }
+
+  private getWindowHeight(): number {
+    return Math.min(
+      document.body.clientHeight, document.documentElement.clientHeight
+    );
   }
 }
 
