@@ -19,12 +19,24 @@ easyList.onReachBound(event => {
     template: getItemTemplate(item),
     data: item
   }]);
-})
+});
+
+easyList.onMount(event => {
+  event.waitUntil(new Promise(resolve => {
+    const imgEl = event.detail.$el.querySelector('img');
+
+    const image = new Image();
+    image.src = imgEl.getAttribute('src');
+    image.onload = () => {
+      resolve();
+    };
+  }));
+});
 
 setTimeout(() => {
   const item = getItem();
 
-  easyList.prependItems([{
+  easyList.appendItems([{
     template: getItemTemplate(item),
     data: item
   }]);

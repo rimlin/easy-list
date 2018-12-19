@@ -47,7 +47,7 @@ class ScrollStrategy implements Strategy {
     if (direction === MoveDirection.TO_BOTTOM) {
       remainingDistance = chunksBox.bottom;
     } else if (direction === MoveDirection.TO_TOP) {
-      remainingDistance = Math.abs(chunksBox.top);
+      remainingDistance = chunksBox.top * -1;
     } else {
       throw new Error('Undefined direction');
     }

@@ -33,15 +33,6 @@ easyList.onMount(event => {
   }));
 });
 
-setTimeout(() => {
-  const item = getItem();
-
-  easyList.prependItems([{
-    template: getItemTemplate(item),
-    data: item
-  }]);
-}, 500);
-
 function getItem() {
   const newId = id++;
 

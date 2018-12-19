@@ -74,7 +74,6 @@ export class EasyListLib extends TaskRootHandler {
 
     this.onRootMount(event => {
       this.calcChunkHeight(event.detail.chunk);
-      this.calcTree();
     });
   }
 
@@ -195,6 +194,7 @@ export class EasyListLib extends TaskRootHandler {
       $chunkEl.remove();
 
       this.renderedChunks.splice(this.getChunkIndex(chunk, this.renderedChunks), 1);
+      this.calcTree();
 
       this.taskEmitter.emitUnmount({
         chunk,
@@ -212,6 +212,13 @@ export class EasyListLib extends TaskRootHandler {
   }
 
   private calcChunkHeight(chunk: Chunk): void {
+    const chunkIndex = this.getChunkIndex(chunk, this.renderedChunks);
+
+    // Wow, this scroll is so fast
+    if (chunkIndex === -1) {
+      return;
+    }
+
     const $el = this.getChunkEl(chunk);
 
     const elHeight = Math.max(
