@@ -6,9 +6,9 @@ export interface StrategyMoveInfo {
 }
 
 export interface Strategy {
-  $chunksContainer: Element;
+  $chunksContainer: HTMLElement;
   destroy(): void;
   onMove(callback: (info: StrategyMoveInfo) => void)
 }
 
-export type StrategyFactory = ($target: Element) => Strategy;
+export type StrategyFactory = ($target: HTMLElement) => Strategy;

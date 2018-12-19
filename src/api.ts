@@ -27,12 +27,12 @@ export class EasyList {
     this.taskChildHandler = new TaskChildHandler(priorityEvents);
   }
 
-  bind($target: Element | string) {
+  bind($target: Element | HTMLElement | string) {
     if (typeof $target === 'string') {
-      $target = document.querySelector($target);
+      $target = document.querySelector($target) as HTMLElement;
     }
 
-    this.easyList.bind($target);
+    this.easyList.bind($target as HTMLElement);
   }
 
   appendItems(items: RawItem[]): void {

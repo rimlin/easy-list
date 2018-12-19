@@ -15,6 +15,8 @@ export interface RawItem {
 }
 
 export interface Chunk extends RawItem {
+  rendered: boolean;
+  height?: number;
   id: number;
 }
 
@@ -33,7 +35,7 @@ const mockChunk2 = {
 
 export class EasyListLib extends TaskRootHandler {
   private strategy: Strategy;
-  private $target: Element;
+  private $target: HTMLElement;
 
   private maxRenderedChunks = 5;
   private lastChunkId = 0;
@@ -71,11 +73,12 @@ export class EasyListLib extends TaskRootHandler {
     });
 
     this.onRootMount(event => {
+      this.calcChunkHeight(event.detail.chunk);
       this.calcTree();
     });
   }
 
-  bind($target: Element): void {
+  bind($target: HTMLElement): void {
     this.$target = $target;
 
     this.setupStrategy();
@@ -106,7 +109,7 @@ export class EasyListLib extends TaskRootHandler {
       }
     });
 
-    const isKeepChunk = (chunkId) => keepChunks.findIndex(chunk => chunk.id === chunkId) !== -1;
+    const isKeepChunk = (chunkId) => this.getChunkIndex(chunkId, keepChunks) !== -1;
 
     // Remove chunks that not needed now
     this.chunksToRender.forEach(renderedChunk => {
@@ -128,7 +131,7 @@ export class EasyListLib extends TaskRootHandler {
   }
 
   private renderChunk(chunk: Chunk): void {
-    const chunkIndex = this.chunksToRender.findIndex(renderChunk => renderChunk.id === chunk.id);
+    const chunkIndex = this.getChunkIndex(chunk, this.chunksToRender);
 
     if (chunkIndex === -1) {
       return;
@@ -141,6 +144,10 @@ export class EasyListLib extends TaskRootHandler {
     this.insertChunkEl(chunkIndex, $chunkEl);
 
     this.renderedChunks.push(chunk);
+
+    this.updateChunk(chunk, {
+      rendered: true,
+    });
 
     this.taskEmitter.emitMount({
       $el: $chunkEl,
@@ -163,7 +170,7 @@ export class EasyListLib extends TaskRootHandler {
 
         // Check chunksToRender collection to find index of future rendered chunk
         // between chunks, which will be render
-        const chunkToRenderIndex = this.chunksToRender.findIndex(chunkToRender => chunkToRender.id === chunkId);
+        const chunkToRenderIndex = this.getChunkIndex(chunkId, this.chunksToRender);
 
         if (chunkIndex > chunkToRenderIndex) {
           $targetChunkEl = $prevChunk;
@@ -187,7 +194,7 @@ export class EasyListLib extends TaskRootHandler {
     if ($chunkEl) {
       $chunkEl.remove();
 
-      this.renderedChunks.splice(this.renderedChunks.indexOf(chunk), 1);
+      this.renderedChunks.splice(this.getChunkIndex(chunk, this.renderedChunks), 1);
 
       this.taskEmitter.emitUnmount({
         chunk,
@@ -200,12 +207,27 @@ export class EasyListLib extends TaskRootHandler {
     return this.getChunksContainer().lastElementChild as $ChunkEl;
   }
 
-  private getChunksContainer(): Element {
+  private getChunksContainer(): HTMLElement {
     return this.strategy.$chunksContainer;
   }
 
+  private calcChunkHeight(chunk: Chunk): void {
+    const $el = this.getChunkEl(chunk);
+
+    this.updateChunk(chunk, {
+      height: $el.offsetHeight,
+    });
+  }
+
   private calcTree(): void {
-    console.log('calc tree');
+    const headRenderedChunks = this.chunks.slice(0, this.headRenderedChunkIndex).filter(chunk => chunk.rendered);
+    const tailRenderedChunks = this.chunks.slice(this.headRenderedChunkIndex + this.maxRenderedChunks).filter(chunk => chunk.rendered);
+
+    const offsetTop = headRenderedChunks.reduce((offset, chunk) => offset + chunk.height, 0);
+    const offsetBottom = tailRenderedChunks.reduce((offset, chunk) => offset + chunk.height, 0);
+
+    this.getChunksContainer().style.paddingTop = `${offsetTop}px`;
+    this.getChunksContainer().style.paddingBottom = `${offsetBottom}px`;
   }
 
   private setupStrategy(): void {
@@ -240,9 +262,27 @@ export class EasyListLib extends TaskRootHandler {
   private convertItemsToChunks(items: RawItem[]): Chunk[] {
     return items.map((item, index) => ({
       data: item.data,
+      rendered: false,
       template: item.template,
+      height: 0,
       id: this.lastChunkId++,
     }));
+  }
+
+  private updateChunk(chunk: Chunk, partial: Partial<Chunk>): void {
+    const chunkIndex = this.getChunkIndex(chunk);
+
+    if (chunkIndex === -1) {
+      throw new Error('Invalid chunk index at updateChunk()');
+    }
+
+    const oldChunk = this.chunks[chunkIndex];
+
+    this.chunks[chunkIndex] = {
+      ...oldChunk,
+      ...partial,
+      id: oldChunk.id,
+    };
   }
 
   private getChunkEl(chunk: Chunk): $ChunkEl {
@@ -255,5 +295,13 @@ export class EasyListLib extends TaskRootHandler {
     });
 
     return $chunkEl;
+  }
+
+  private getChunkIndex(chunk: Chunk | number, collection = this.chunks) {
+    if (typeof chunk === 'number') {
+      return collection.findIndex(currChunk => currChunk.id === chunk);
+    } else {
+      return collection.findIndex(currChunk => currChunk.id === chunk.id);
+    }
   }
 }

@@ -7,17 +7,17 @@ export type BoundingBox = ClientRect | DOMRect;
 const moveEvent = 'scroll-move';
 
 class ScrollStrategy implements Strategy {
-  $chunksContainer: Element;
+  $chunksContainer: HTMLElement;
 
   private lastYCoord = 0;
 
   constructor(
-    private $scrollContainer: HTMLDivElement | Window,
-    private $target: Element
+    private $scrollContainer: HTMLElement | Window,
+    private $target: HTMLElement
   ) {
     if ($target === $scrollContainer) {
       $target.innerHTML = '<div></div>';
-      this.$chunksContainer = $target.firstElementChild;
+      this.$chunksContainer = $target.firstElementChild as HTMLElement;
     } else {
       this.$chunksContainer = $target;
     }
@@ -123,12 +123,12 @@ class ScrollStrategy implements Strategy {
   }
 }
 
-export function createScrollStrategy($scrollContainer: string | Element | Window = window): StrategyFactory {
+export function createScrollStrategy($scrollContainer: string | HTMLElement | Window = window): StrategyFactory {
   if (typeof $scrollContainer === 'string') {
-    $scrollContainer = document.querySelector($scrollContainer);
+    $scrollContainer = document.querySelector($scrollContainer) as HTMLElement;
   }
 
   return $target => {
-    return new ScrollStrategy($scrollContainer as HTMLDivElement | Window, $target);
+    return new ScrollStrategy($scrollContainer as HTMLElement | Window, $target);
   }
 }
