@@ -39,7 +39,6 @@ class ScrollStrategy implements Strategy {
   }
 
   private check(): void {
-    const scrollBox = this.getScrollBox();
     const chunksBox = this.getChunksBox();
     const direction = this.getVerticalDirection();
     let remainingDistance: number;

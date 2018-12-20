@@ -27,6 +27,7 @@ export interface TaskData {
 export interface TaskReachBoundData {
   readonly direction: MoveDirection;
   readonly forwardChunks: Chunk[];
+  readonly __remainingDistance: number;
 };
 
 export type TaskRenderData = {

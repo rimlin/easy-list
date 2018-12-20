@@ -36,6 +36,7 @@ const mockChunk2 = {
 export class EasyListLib extends TaskRootHandler {
   private strategy: Strategy;
   private $target: HTMLElement;
+  private lockMoveHandler = false;
 
   private maxRenderedChunks = 5;
   private lastChunkId = 0;
@@ -53,15 +54,55 @@ export class EasyListLib extends TaskRootHandler {
     super(priorityEvents);
 
     this.onRootReachBound(event => {
+      this.lockMoveHandler = false;
+
+      /**
+       * If direction to top, remaining distance can be negative value
+       * if scroll is over of top chunks box;
+       *
+       * If direction to bottom, remaining distance can be negative value
+       * if scroll is over of bottom chunks box;
+       */
+
+      let remainHeight = Math.abs(event.detail.__remainingDistance);
+
       if (event.detail.direction === MoveDirection.TO_BOTTOM) {
         if (event.detail.forwardChunks.length > 0) {
-          this.headRenderedChunkIndex++;
+          const reduceDelta = () => {
+            const lastRenderedIndex = this.headRenderedChunkIndex + this.maxRenderedChunks + 1;
+
+            if (lastRenderedIndex >= this.chunks.length) {
+              return;
+            }
+
+            this.headRenderedChunkIndex++;
+            remainHeight -= this.chunks[lastRenderedIndex].height;
+
+            if (remainHeight > 0) {
+              reduceDelta();
+            }
+          };
+
+          reduceDelta();
         }
       }
 
       if (event.detail.direction === MoveDirection.TO_TOP) {
         if (event.detail.forwardChunks.length > 0) {
-          this.headRenderedChunkIndex--
+          const reduceDelta = () => {
+            if (this.headRenderedChunkIndex <= 0) {
+              return;
+            }
+
+            this.headRenderedChunkIndex--;
+            remainHeight -= this.chunks[this.headRenderedChunkIndex].height;
+
+            if (remainHeight > 0) {
+              reduceDelta();
+            }
+          };
+
+          reduceDelta();
         }
       }
 
@@ -245,19 +286,29 @@ export class EasyListLib extends TaskRootHandler {
     this.strategy = this.options.strategy(this.$target);
 
     this.strategy.onMove(info => {
+      if (this.lockMoveHandler) {
+        return;
+      }
+
       if (info.direction === MoveDirection.TO_BOTTOM && info.remainingDistance < 300) {
+        this.lockMoveHandler = true;
+
         const forwardChunks = this.chunks.slice(this.headRenderedChunkIndex + this.chunksToRender.length);
 
         this.taskEmitter.emitReachBound({
           direction: info.direction,
           forwardChunks,
+          __remainingDistance: info.remainingDistance,
         });
       } else if (info.direction === MoveDirection.TO_TOP && info.remainingDistance < 300) {
+        this.lockMoveHandler = true;
+
         const forwardChunks = this.chunks.slice(0, this.headRenderedChunkIndex);
 
         this.taskEmitter.emitReachBound({
           direction: info.direction,
           forwardChunks,
+          __remainingDistance: info.remainingDistance,
         });
       }
     });
@@ -266,6 +317,7 @@ export class EasyListLib extends TaskRootHandler {
       this.taskEmitter.emitReachBound({
         direction: MoveDirection.TO_BOTTOM,
         forwardChunks: [],
+        __remainingDistance: 0,
       });
     })
   }
