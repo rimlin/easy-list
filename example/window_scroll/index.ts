@@ -52,7 +52,7 @@ function getItem() {
 }
 
 function getItemTemplate(item) {
-  return `<div>
+  return `<div class="item">
     <h1>Picture ${item.id}</h1>
     <img src="${item.image}" />
   </div>`;

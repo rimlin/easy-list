@@ -77,10 +77,12 @@ export class EasyListLib extends TaskRootHandler {
 
             this.headRenderedChunkIndex++;
 
-            remainHeight -= this.chunks[lastRenderedIndex].height;
+            if (this.chunks[lastRenderedIndex].calculated) {
+              remainHeight -= this.chunks[lastRenderedIndex].height;
 
-            if (remainHeight > 0) {
-              reduceDelta();
+              if (remainHeight > 0) {
+                reduceDelta();
+              }
             }
           };
 
@@ -97,10 +99,12 @@ export class EasyListLib extends TaskRootHandler {
 
             this.headRenderedChunkIndex--;
 
-            remainHeight -= this.chunks[this.headRenderedChunkIndex].height;
+            if (this.chunks[this.headRenderedChunkIndex].calculated) {
+              remainHeight -= this.chunks[this.headRenderedChunkIndex].height;
 
-            if (remainHeight > 0) {
-              reduceDelta();
+              if (remainHeight > 0) {
+                reduceDelta();
+              }
             }
           };
 
