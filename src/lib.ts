@@ -77,12 +77,10 @@ export class EasyListLib extends TaskRootHandler {
 
             this.headRenderedChunkIndex++;
 
-            if (this.chunks[lastRenderedIndex].calculated) {
-              remainHeight -= this.chunks[lastRenderedIndex].height;
+            remainHeight -= this.chunks[lastRenderedIndex].height;
 
-              if (remainHeight > 0) {
-                reduceDelta();
-              }
+            if (remainHeight > 0) {
+              reduceDelta();
             }
           };
 
@@ -99,12 +97,10 @@ export class EasyListLib extends TaskRootHandler {
 
             this.headRenderedChunkIndex--;
 
-            if (this.chunks[this.headRenderedChunkIndex].calculated) {
-              remainHeight -= this.chunks[this.headRenderedChunkIndex].height;
+            remainHeight -= this.chunks[this.headRenderedChunkIndex].height;
 
-              if (remainHeight > 0) {
-                reduceDelta();
-              }
+            if (remainHeight > 0) {
+              reduceDelta();
             }
           };
 
@@ -173,6 +169,14 @@ export class EasyListLib extends TaskRootHandler {
 
     // Render new chunks
     newToRenderChunks.forEach(chunk => {
+      /**
+       * That case is possible if the mount of the chunk X was completed after
+       * the chunk X appeared in the list for the 2nd time
+       */
+      if (this.renderedChunkIds.includes(chunk.id) === true) {
+        return;
+      }
+
       if (keepChunks.includes(chunk.id) === false) {
         this.taskEmitter.emitRender({
           chunk,
@@ -215,12 +219,11 @@ export class EasyListLib extends TaskRootHandler {
       let $targetChunkEl: $ChunkEl;
 
       while($prevChunk) {
-        const chunkId = +$prevChunk.dataset['chunk'];
+        const renderedChunkId = +$prevChunk.dataset['chunk'];
 
-        // Check toRenderChunkIds collection to find index of future rendered chunk
-        // between chunks, which will be render
-        const renderedChunkIndex = this.toRenderChunkIds.indexOf(chunkId);
-        chunkIndex = this.toRenderChunkIds.indexOf(chunk.id);
+        // Check index of future render chunk between chunks, which were already rendered
+        const renderedChunkIndex = this.getChunkIndex(renderedChunkId);
+        chunkIndex = this.getChunkIndex(chunk.id);
 
         if (chunkIndex > renderedChunkIndex) {
           $targetChunkEl = $prevChunk;
@@ -280,7 +283,7 @@ export class EasyListLib extends TaskRootHandler {
     /**
      * Wow, this scroll is so fast
      * This case can be happen if chunk was already calculated and
-     * removing in renderTree
+     * now is removing in tree render
      */
     if (chunkIndex === -1) {
       return;
