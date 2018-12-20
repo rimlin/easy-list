@@ -76,10 +76,13 @@ export class EasyListLib extends TaskRootHandler {
             }
 
             this.headRenderedChunkIndex++;
-            remainHeight -= this.chunks[lastRenderedIndex].height;
 
-            if (remainHeight > 0) {
-              reduceDelta();
+            if (this.chunks[lastRenderedIndex].calculated) {
+              remainHeight -= this.chunks[lastRenderedIndex].height;
+
+              if (remainHeight > 0) {
+                reduceDelta();
+              }
             }
           };
 
@@ -95,10 +98,13 @@ export class EasyListLib extends TaskRootHandler {
             }
 
             this.headRenderedChunkIndex--;
-            remainHeight -= this.chunks[this.headRenderedChunkIndex].height;
 
-            if (remainHeight > 0) {
-              reduceDelta();
+            if (this.chunks[this.headRenderedChunkIndex].calculated) {
+              remainHeight -= this.chunks[this.headRenderedChunkIndex].height;
+
+              if (remainHeight > 0) {
+                reduceDelta();
+              }
             }
           };
 
@@ -114,7 +120,14 @@ export class EasyListLib extends TaskRootHandler {
     });
 
     this.onRootMount(event => {
-      this.calcChunk(event.detail.chunk);
+      const { chunk } = event.detail;
+
+      this.calcChunk(chunk);
+
+      // If this chunk is not need to be in list anymore, remove it
+      if (this.toRenderChunkIds.includes(chunk.id) === false) {
+        this.tryToRemoveChunk(chunk.id);
+      }
     });
   }
 
@@ -150,9 +163,9 @@ export class EasyListLib extends TaskRootHandler {
     });
 
     // Remove chunks that not needed now
-    this.renderedChunkIds.forEach(chunkId => {
+    [...this.renderedChunkIds].forEach(chunkId => {
       if (keepChunks.includes(chunkId) === false) {
-        this.tryToRemoveChunk(this.getChunkById(chunkId));
+        this.tryToRemoveChunk(chunkId);
       }
     });
 
@@ -179,7 +192,7 @@ export class EasyListLib extends TaskRootHandler {
     $chunkEl.dataset['chunk'] = chunk.id.toString();
     $chunkEl.innerHTML = chunk.template;
 
-    this.insertChunkEl(chunkIndex, $chunkEl);
+    this.insertChunkEl(chunk, $chunkEl);
 
     this.renderedChunkIds.push(chunk.id);
 
@@ -190,7 +203,9 @@ export class EasyListLib extends TaskRootHandler {
     });
   }
 
-  private insertChunkEl(chunkIndex: number, $chunkEl: $ChunkEl): void {
+  private insertChunkEl(chunk: Chunk, $chunkEl: $ChunkEl): void {
+    let chunkIndex = this.toRenderChunkIds.indexOf(chunk.id);
+
     if (chunkIndex === 0) {
       this.getChunksContainer().prepend($chunkEl);
     } else if (this.renderedChunkIds.length === 0) {
@@ -204,9 +219,10 @@ export class EasyListLib extends TaskRootHandler {
 
         // Check toRenderChunkIds collection to find index of future rendered chunk
         // between chunks, which will be render
-        const toRenderChunkIndex = this.toRenderChunkIds.indexOf(chunkId);
+        const renderedChunkIndex = this.toRenderChunkIds.indexOf(chunkId);
+        chunkIndex = this.toRenderChunkIds.indexOf(chunk.id);
 
-        if (chunkIndex > toRenderChunkIndex) {
+        if (chunkIndex > renderedChunkIndex) {
           $targetChunkEl = $prevChunk;
           break;
         }
@@ -222,7 +238,9 @@ export class EasyListLib extends TaskRootHandler {
     }
   }
 
-  private tryToRemoveChunk(chunk: Chunk): boolean {
+  private tryToRemoveChunk(chunkId: number): boolean {
+    const chunk = this.getChunkById(chunkId);
+
     if (chunk.calculated) {
       this.removeChunk(chunk);
 
@@ -259,7 +277,11 @@ export class EasyListLib extends TaskRootHandler {
   private calcChunk(chunk: Chunk): void {
     const chunkIndex = this.renderedChunkIds.indexOf(chunk.id);
 
-    // Wow, this scroll is so fast
+    /**
+     * Wow, this scroll is so fast
+     * This case can be happen if chunk was already calculated and
+     * removing in renderTree
+     */
     if (chunkIndex === -1) {
       return;
     }
