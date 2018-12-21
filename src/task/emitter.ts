@@ -65,12 +65,7 @@ export class TaskEmitter {
   }
 
   emitUnmount(data: TaskUnmountData) {
-    const customEvent = new CustomEvent<TaskUnmountData>(TaskType.UNMOUNT, {
-      detail: data,
-      bubbles: true,
-    });
-
-    this.priorityEvents.emit(customEvent);
+    this.emitExtendableEvent<TaskUnmountData>(TaskType.UNMOUNT, data, data.chunk.id);
   }
 
   private emitExtendableEvent<T>(taskType: TaskType, data: T, marker) {

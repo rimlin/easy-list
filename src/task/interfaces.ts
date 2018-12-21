@@ -36,6 +36,10 @@ export type TaskRenderData = {
 
 export type TaskMountData = TaskData & {
   $el: $ChunkEl;
+  isShadowPlaceholder: boolean;
 };
 
-export type TaskUnmountData = TaskData;
+export type TaskUnmountData = TaskData & {
+  $el: $ChunkEl;
+  isShadowPlaceholder: boolean;
+};

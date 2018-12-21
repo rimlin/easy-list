@@ -6,17 +6,31 @@ import { TaskRootHandler } from './task/root-handler';
 import { Strategy, StrategyFactory } from 'strategy/interfaces';
 
 export interface EasyListOptions {
+  /**
+   * Strategy is used to detect, that scroll bound is touched chunks box.
+   *
+   * By default is `ScrollStrategy`.
+   */
   strategy?: StrategyFactory;
+
+  /**
+   * If enabled, after adding new chunks add space as placeholder after/before
+   * rendered chunks. If chunk height is not defined, mount him as placeholder
+   * to detect height of him element and increase placehodler space.
+   *
+   * Emitting `onMount/onUnmount` event with `isShadowPlaceholder: true` option.
+   */
+  useShadowPlaceholder?: boolean;
 }
 
 export interface RawItem {
   template: string;
+  height?: number;
   data?: any;
 }
 
 export interface Chunk extends RawItem {
   calculated: boolean;
-  height: number;
   id: number;
 }
 
@@ -44,6 +58,7 @@ export class EasyListLib extends TaskRootHandler {
   private chunks: Chunk[] = [];
   private toRenderChunkIds: number[] = [];
   private renderedChunkIds: number[] = [];
+  private runningShadowPlaceholderIds: number[] = [];
   private headRenderedChunkIndex: number = 0;
 
   constructor(
@@ -69,7 +84,7 @@ export class EasyListLib extends TaskRootHandler {
       if (event.detail.direction === MoveDirection.TO_BOTTOM) {
         if (event.detail.forwardChunks.length > 0) {
           const reduceDelta = () => {
-            const lastRenderedIndex = this.headRenderedChunkIndex + this.maxRenderedChunks + 1;
+            const lastRenderedIndex = this.headRenderedChunkIndex + this.maxRenderedChunks;
 
             if (lastRenderedIndex >= this.chunks.length) {
               return;
@@ -124,10 +139,16 @@ export class EasyListLib extends TaskRootHandler {
 
       this.calcChunk(chunk);
 
-      // If this chunk is not need to be in list anymore, remove it
+      // If this chunk is not need to be in list anymore, destroy it
       if (this.toRenderChunkIds.includes(chunk.id) === false) {
-        this.tryToRemoveChunk(chunk.id);
+        this.tryToDestroyChunk(chunk.id);
       }
+    });
+
+    this.onRootUnmount(event => {
+      const { chunk } = event.detail;
+
+      this.removeChunk(chunk);
     });
   }
 
@@ -142,6 +163,10 @@ export class EasyListLib extends TaskRootHandler {
 
     this.chunks.push(...chunks);
     this.renderTree();
+
+    if (this.options.useShadowPlaceholder) {
+      this.renderShadowPlaceholderTree(MoveDirection.TO_BOTTOM);
+    }
   }
 
   prependItems(items: RawItem[]): void {
@@ -162,10 +187,12 @@ export class EasyListLib extends TaskRootHandler {
       }
     });
 
-    // Remove chunks that not needed now
+    // Destroy chunks that not needed now
     [...this.renderedChunkIds].forEach(chunkId => {
       if (keepChunks.includes(chunkId) === false) {
-        this.tryToRemoveChunk(chunkId);
+        this.tryToDestroyChunk(chunkId);
+      } else {
+        this.runningShadowPlaceholderIds.splice(this.runningShadowPlaceholderIds.indexOf(chunkId), 1);
       }
     });
 
@@ -189,6 +216,38 @@ export class EasyListLib extends TaskRootHandler {
     });
   }
 
+  private renderShadowPlaceholderTree(direction: MoveDirection): void {
+    let shadowPlaceholderChunks: Chunk[] = [];
+
+    if (direction === MoveDirection.TO_BOTTOM) {
+      shadowPlaceholderChunks = this.chunks.slice(this.headRenderedChunkIndex + this.maxRenderedChunks);
+    }
+
+    if (direction === MoveDirection.TO_TOP) {
+      shadowPlaceholderChunks = this.chunks.slice(0, this.headRenderedChunkIndex);
+    }
+
+    shadowPlaceholderChunks.forEach(chunk => {
+      if (isExists(chunk.height) && chunk.height > 0) {
+        this.updateChunk(chunk, {
+          calculated: true,
+        });
+      } else {
+        const $chunkEl = this.drawChunk(chunk);
+
+        this.runningShadowPlaceholderIds.push(chunk.id);
+        this.renderedChunkIds.push(chunk.id);
+
+        this.taskEmitter.emitMount({
+          $el: $chunkEl,
+          chunk,
+          renderedChunks: this.getChunksByIds(this.renderedChunkIds),
+          isShadowPlaceholder: true,
+        });
+      }
+    });
+  }
+
   private renderChunk(chunk: Chunk): void {
     const chunkIndex = this.toRenderChunkIds.indexOf(chunk.id);
 
@@ -196,11 +255,7 @@ export class EasyListLib extends TaskRootHandler {
       return;
     }
 
-    const $chunkEl = document.createElement('div');
-    $chunkEl.dataset['chunk'] = chunk.id.toString();
-    $chunkEl.innerHTML = chunk.template;
-
-    this.insertChunkEl(chunk, $chunkEl);
+    const $chunkEl = this.drawChunk(chunk);
 
     this.renderedChunkIds.push(chunk.id);
 
@@ -208,7 +263,18 @@ export class EasyListLib extends TaskRootHandler {
       $el: $chunkEl,
       chunk,
       renderedChunks: this.getChunksByIds(this.renderedChunkIds),
+      isShadowPlaceholder: false,
     });
+  }
+
+  private drawChunk(chunk: Chunk): $ChunkEl {
+    const $chunkEl = document.createElement('div');
+    $chunkEl.dataset['chunk'] = chunk.id.toString();
+    $chunkEl.innerHTML = chunk.template;
+
+    this.insertChunkEl(chunk, $chunkEl);
+
+    return $chunkEl;
   }
 
   private insertChunkEl(chunk: Chunk, $chunkEl: $ChunkEl): void {
@@ -245,11 +311,11 @@ export class EasyListLib extends TaskRootHandler {
     }
   }
 
-  private tryToRemoveChunk(chunkId: number): boolean {
+  private tryToDestroyChunk(chunkId: number): boolean {
     const chunk = this.getChunkById(chunkId);
 
     if (chunk.calculated) {
-      this.removeChunk(chunk);
+      this.destroyChunk(chunk);
 
       return true;
     } else {
@@ -257,19 +323,35 @@ export class EasyListLib extends TaskRootHandler {
     }
   }
 
+  /**
+   * Initialize event to unmount chunk
+   * With this event client can remove listeners from elements and etc.
+   */
+  private destroyChunk(chunk: Chunk) {
+    const $chunkEl = this.getChunkEl(chunk);
+
+    if ($chunkEl) {
+      this.taskEmitter.emitUnmount({
+        $el: $chunkEl,
+        chunk,
+        renderedChunks: this.getChunksByIds(this.renderedChunkIds),
+        isShadowPlaceholder: this.runningShadowPlaceholderIds.includes(chunk.id),
+      });
+    }
+  }
+
+  /**
+   * Remove chunk from the DOM
+   */
   private removeChunk(chunk: Chunk): void {
     const $chunkEl = this.getChunkEl(chunk);
 
     if ($chunkEl) {
       $chunkEl.remove();
 
+      this.runningShadowPlaceholderIds.splice(this.runningShadowPlaceholderIds.indexOf(chunk.id), 1);
       this.renderedChunkIds.splice(this.renderedChunkIds.indexOf(chunk.id), 1);
       this.calcTree();
-
-      this.taskEmitter.emitUnmount({
-        chunk,
-        renderedChunks: this.getChunksByIds(this.renderedChunkIds),
-      });
     }
   }
 
@@ -361,7 +443,7 @@ export class EasyListLib extends TaskRootHandler {
       data: item.data,
       calculated: false,
       template: item.template,
-      height: 0,
+      height: isExists(item.height) ? item.height : 0,
       id: this.lastChunkId++,
     }));
   }

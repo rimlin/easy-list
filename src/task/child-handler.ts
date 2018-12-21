@@ -25,7 +25,7 @@ export class TaskChildHandler {
     this.priorityEvents.on(TaskType.MOUNT, callback);
   }
 
-  onUnmount(callback: (event: CustomEvent<TaskUnmountData>) => void) {
+  onUnmount(callback: (event: ExtendableEvent<TaskUnmountData>) => void) {
     this.priorityEvents.on(TaskType.UNMOUNT, callback);
   }
 }

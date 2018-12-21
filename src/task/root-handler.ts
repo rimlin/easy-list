@@ -38,7 +38,7 @@ export class TaskRootHandler {
     this.priorityEvents.onRoot(TaskType.MOUNT, handleExtendableEvent<TaskMountData>(callback));
   }
 
-  protected onRootUnmount(callback: (event: CustomEvent<TaskUnmountData>) => void) {
-    this.priorityEvents.onRoot(TaskType.UNMOUNT, callback);
+  protected onRootUnmount(callback: (event: ExtendableEvent<TaskUnmountData>) => void) {
+    this.priorityEvents.onRoot(TaskType.UNMOUNT, handleExtendableEvent<TaskUnmountData>(callback));
   }
 }

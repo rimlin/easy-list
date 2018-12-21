@@ -55,7 +55,7 @@ export class EasyList {
     this.taskChildHandler.onMount(callback);
   }
 
-  onUnmount(callback: (event: CustomEvent<TaskUnmountData>) => void): void {
+  onUnmount(callback: (event: ExtendableEvent<TaskUnmountData>) => void): void {
     this.taskChildHandler.onUnmount(callback);
   }
 }
