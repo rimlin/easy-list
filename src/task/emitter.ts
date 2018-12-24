@@ -9,6 +9,7 @@ import {
 import { PriorityEvents } from '../services/priority-events';
 import { Eventer } from '../services/eventer';
 import { randString } from '../utils';
+import { handleExtendableEvent } from './root-handler';
 
 const supplyWaitUntil = <T>(customEvent): ExtendableEvent<T> => {
   const eventName = randString(4);
@@ -28,10 +29,20 @@ const supplyWaitUntil = <T>(customEvent): ExtendableEvent<T> => {
     customEvent.__isPending = true;
 
     promise.then(() => {
-      resolve();
       customEvent.__isPending = false;
+
+      if (customEvent.__canceled !== true) {
+        resolve();
+      }
     });
   };
+
+  const originalSIP = customEvent.stopImmediatePropagation;
+
+  customEvent.stopImmediatePropagation = () => {
+    customEvent.__canceled = true;
+    originalSIP.call(customEvent);
+  }
 
   return customEvent;
 }
@@ -52,23 +63,23 @@ export class TaskEmitter {
     private priorityEvents: PriorityEvents,
   ) {}
 
-  emitReachBound(data: TaskReachBoundData) {
-    this.emitExtendableEvent<TaskReachBoundData>(TaskType.REACH_BOUND, data, data.direction);
+  emitReachBound(data: TaskReachBoundData): Promise<ExtendableEvent<TaskReachBoundData>> {
+    return this.emitExtendableEvent<TaskReachBoundData>(TaskType.REACH_BOUND, data, data.direction);
   }
 
-  emitRender(data: TaskRenderData) {
-    this.emitExtendableEvent<TaskRenderData>(TaskType.RENDER, data, data.chunk.id);
+  emitRender(data: TaskRenderData): Promise<ExtendableEvent<TaskRenderData>> {
+    return this.emitExtendableEvent<TaskRenderData>(TaskType.RENDER, data, data.chunk.id);
   }
 
-  emitMount(data: TaskMountData) {
-    this.emitExtendableEvent<TaskMountData>(TaskType.MOUNT, data, data.chunk.id);
+  emitMount(data: TaskMountData): Promise<ExtendableEvent<TaskMountData>> {
+    return this.emitExtendableEvent<TaskMountData>(TaskType.MOUNT, data, data.chunk.id);
   }
 
-  emitUnmount(data: TaskUnmountData) {
-    this.emitExtendableEvent<TaskUnmountData>(TaskType.UNMOUNT, data, data.chunk.id);
+  emitUnmount(data: TaskUnmountData): Promise<ExtendableEvent<TaskUnmountData>> {
+    return this.emitExtendableEvent<TaskUnmountData>(TaskType.UNMOUNT, data, data.chunk.id);
   }
 
-  private emitExtendableEvent<T>(taskType: TaskType, data: T, marker) {
+  private emitExtendableEvent<T>(taskType: TaskType, data: T, marker): Promise<ExtendableEvent<T>> {
     if (this.busyTasks[taskType].includes(marker)) {
       return;
     }
@@ -85,6 +96,15 @@ export class TaskEmitter {
     });
 
     this.busyTasks[taskType].push(marker);
-    this.priorityEvents.emit(enhancedCustomEvent);
+
+    return new Promise(resolve => {
+      this.priorityEvents.onceRoot(taskType, (event: ExtendableEvent<T>) => {
+        if (event === enhancedCustomEvent) {
+          handleExtendableEvent<T>(resolve)(event);
+        }
+      });
+
+      this.priorityEvents.emit(enhancedCustomEvent);
+    });
   }
 }

@@ -243,6 +243,8 @@ export class EasyListLib extends TaskRootHandler {
           chunk,
           renderedChunks: this.getChunksByIds(this.renderedChunkIds),
           isShadowPlaceholder: true,
+        }).then(event => {
+          event.stopImmediatePropagation();
         });
       }
     });

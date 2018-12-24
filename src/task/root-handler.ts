@@ -9,7 +9,7 @@ import {
 } from './interfaces';
 import { isExists } from '../utils';
 
-const handleExtendableEvent = <T>(callback: (event: ExtendableEvent<T>) => void) => {
+export const handleExtendableEvent = <T>(callback: (event: ExtendableEvent<T>) => void) => {
   return (event: ExtendableEvent<T>) => {
     event.__onResolve(() => {
       callback(event);

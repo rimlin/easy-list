@@ -5,6 +5,7 @@ export type ExtendableEvent<T> = CustomEvent<T> & {
   readonly __onResolve: (callback: () => void) => void;
   readonly __resolve: () => void;
   __isPending: boolean;
+  __canceled: boolean;
 };
 
 export enum MoveDirection {
