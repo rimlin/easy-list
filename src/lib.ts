@@ -56,7 +56,7 @@ export class EasyListLib extends TaskRootHandler {
   private lastChunkId = 0;
 
   private chunks: Chunk[] = [];
-  private toRenderChunkIds: number[] = [];
+  private toRenderChunkIds: Set<number> = new Set();
   private renderedChunkIds: number[] = [];
   private runningShadowPlaceholderIds: number[] = [];
   private headRenderedChunkIndex: number = 0;
@@ -140,7 +140,7 @@ export class EasyListLib extends TaskRootHandler {
       this.calcChunk(chunk);
 
       // If this chunk is not need to be in list anymore, destroy it
-      if (this.toRenderChunkIds.includes(chunk.id) === false) {
+      if (this.toRenderChunkIds.has(chunk.id) === false) {
         this.tryToDestroyChunk(chunk.id);
       }
     });
@@ -174,45 +174,65 @@ export class EasyListLib extends TaskRootHandler {
 
     this.chunks.unshift(...chunks);
     this.renderTree();
+
+    if (this.options.useShadowPlaceholder) {
+      this.renderShadowPlaceholderTree(MoveDirection.TO_TOP);
+    }
   }
 
   private renderTree(): void {
     const newToRenderChunks = this.chunks.slice(this.headRenderedChunkIndex, this.headRenderedChunkIndex + this.maxRenderedChunks);
     const keepChunks: number[] = [];
 
+    const waitDestroy = [];
+
     // Get old chunks, that need to keep in tree
     newToRenderChunks.forEach(chunk => {
-      if (this.toRenderChunkIds.includes(chunk.id) === true) {
+      if (this.toRenderChunkIds.has(chunk.id) === true) {
         keepChunks.push(chunk.id);
       }
-    });
 
-    // Destroy chunks that not needed now
-    [...this.renderedChunkIds].forEach(chunkId => {
-      if (keepChunks.includes(chunkId) === false) {
-        this.tryToDestroyChunk(chunkId);
-      } else {
-        this.runningShadowPlaceholderIds.splice(this.runningShadowPlaceholderIds.indexOf(chunkId), 1);
-      }
-    });
-
-    this.toRenderChunkIds = newToRenderChunks.map(chunk => chunk.id);
-
-    // Render new chunks
-    newToRenderChunks.forEach(chunk => {
-      /**
-       * That case is possible if the mount of the chunk X was completed after
-       * the chunk X appeared in the list for the 2nd time
-       */
-      if (this.renderedChunkIds.includes(chunk.id) === true) {
-        return;
-      }
-
-      if (keepChunks.includes(chunk.id) === false) {
-        this.taskEmitter.emitRender({
-          chunk,
+      if (this.runningShadowPlaceholderIds.includes(chunk.id)) {
+        /**
+         * If this chunk need to keep in tree and it exists in tree as shadow placeholder,
+         * we need to destroy it, and mount chunk again without `isShadowPlaceholder` property
+         */
+        const destroyedChunk = this.destroyChunk(this.getChunkById(chunk.id)).then(event => {
+          return Promise.resolve(chunk.id);
         });
+
+        waitDestroy.push(destroyedChunk);
       }
+    });
+
+    Promise.all(waitDestroy).then(destroyedIds => {
+      // Destroy chunks that not needed now
+      [...this.renderedChunkIds].forEach(chunkId => {
+        if (keepChunks.includes(chunkId) === false) {
+          this.tryToDestroyChunk(chunkId);
+        }
+      });
+
+      this.toRenderChunkIds = new Set([...newToRenderChunks.map(chunk => chunk.id), ...destroyedIds]);
+
+      // Render new chunks
+      this.toRenderChunkIds.forEach(chunkId => {
+        const chunk = this.getChunkById(chunkId);
+
+        /**
+         * That case is possible if the mount of the chunk X was completed after
+         * the chunk X appeared in the list for the 2nd time
+         */
+        if (this.renderedChunkIds.includes(chunk.id) === true) {
+          return;
+        }
+
+        if (keepChunks.includes(chunk.id) === false) {
+          this.taskEmitter.emitRender({
+            chunk,
+          });
+        }
+      });
     });
   }
 
@@ -233,27 +253,30 @@ export class EasyListLib extends TaskRootHandler {
           calculated: true,
         });
       } else {
-        const $chunkEl = this.drawChunk(chunk);
-
         this.runningShadowPlaceholderIds.push(chunk.id);
-        this.renderedChunkIds.push(chunk.id);
 
-        this.taskEmitter.emitMount({
-          $el: $chunkEl,
+        this.taskEmitter.emitRender({
           chunk,
-          renderedChunks: this.getChunksByIds(this.renderedChunkIds),
-          isShadowPlaceholder: true,
         }).then(event => {
           event.stopImmediatePropagation();
+
+          const $chunkEl = this.drawChunk(chunk);
+
+          this.renderedChunkIds.push(chunk.id);
+
+          this.taskEmitter.emitMount({
+            $el: $chunkEl,
+            chunk,
+            renderedChunks: this.getChunksByIds(this.renderedChunkIds),
+            isShadowPlaceholder: true,
+          });
         });
       }
     });
   }
 
   private renderChunk(chunk: Chunk): void {
-    const chunkIndex = this.toRenderChunkIds.indexOf(chunk.id);
-
-    if (chunkIndex === -1) {
+    if (this.toRenderChunkIds.has(chunk.id) === false) {
       return;
     }
 
@@ -280,7 +303,7 @@ export class EasyListLib extends TaskRootHandler {
   }
 
   private insertChunkEl(chunk: Chunk, $chunkEl: $ChunkEl): void {
-    let chunkIndex = this.toRenderChunkIds.indexOf(chunk.id);
+    let chunkIndex = this.getChunkIndex(chunk.id);
 
     if (chunkIndex === 0) {
       this.getChunksContainer().prepend($chunkEl);
@@ -299,6 +322,10 @@ export class EasyListLib extends TaskRootHandler {
 
         if (chunkIndex > renderedChunkIndex) {
           $targetChunkEl = $prevChunk;
+          break;
+        }
+
+        if (isExists($prevChunk.previousElementSibling) === false) {
           break;
         }
 
@@ -333,7 +360,7 @@ export class EasyListLib extends TaskRootHandler {
     const $chunkEl = this.getChunkEl(chunk);
 
     if ($chunkEl) {
-      this.taskEmitter.emitUnmount({
+      return this.taskEmitter.emitUnmount({
         $el: $chunkEl,
         chunk,
         renderedChunks: this.getChunksByIds(this.renderedChunkIds),
@@ -411,7 +438,7 @@ export class EasyListLib extends TaskRootHandler {
       if (info.direction === MoveDirection.TO_BOTTOM && info.remainingDistance < 300) {
         this.lockMoveHandler = true;
 
-        const forwardChunks = this.chunks.slice(this.headRenderedChunkIndex + this.toRenderChunkIds.length);
+        const forwardChunks = this.chunks.slice(this.headRenderedChunkIndex + this.toRenderChunkIds.size);
 
         this.taskEmitter.emitReachBound({
           direction: info.direction,

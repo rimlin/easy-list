@@ -39,7 +39,7 @@ easyList.onReachBound(event => {
 });
 
 easyList.onMount(event => {
-  if (!event.detail.isShadowPlaceholder) {
+  if (event.detail.isShadowPlaceholder) {
     return;
   }
 
