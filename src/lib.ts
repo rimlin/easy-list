@@ -57,8 +57,8 @@ export class EasyListLib extends TaskRootHandler {
 
   private chunks: Chunk[] = [];
   private toRenderChunkIds: Set<number> = new Set();
-  private renderedChunkIds: number[] = [];
-  private runningShadowPlaceholderIds: number[] = [];
+  private renderedChunkIds: Set<number> = new Set();
+  private runningShadowPlaceholderIds: Set<number> = new Set();
   private headRenderedChunkIndex: number = 0;
 
   constructor(
@@ -192,7 +192,7 @@ export class EasyListLib extends TaskRootHandler {
         keepChunks.push(chunk.id);
       }
 
-      if (this.runningShadowPlaceholderIds.includes(chunk.id)) {
+      if (this.runningShadowPlaceholderIds.has(chunk.id)) {
         /**
          * If this chunk need to keep in tree and it exists in tree as shadow placeholder,
          * we need to destroy it, and mount chunk again without `isShadowPlaceholder` property
@@ -223,7 +223,7 @@ export class EasyListLib extends TaskRootHandler {
          * That case is possible if the mount of the chunk X was completed after
          * the chunk X appeared in the list for the 2nd time
          */
-        if (this.renderedChunkIds.includes(chunk.id) === true) {
+        if (this.renderedChunkIds.has(chunk.id) === true) {
           return;
         }
 
@@ -253,7 +253,7 @@ export class EasyListLib extends TaskRootHandler {
           calculated: true,
         });
       } else {
-        this.runningShadowPlaceholderIds.push(chunk.id);
+        this.runningShadowPlaceholderIds.add(chunk.id);
 
         this.taskEmitter.emitRender({
           chunk,
@@ -262,7 +262,7 @@ export class EasyListLib extends TaskRootHandler {
 
           const $chunkEl = this.drawChunk(chunk);
 
-          this.renderedChunkIds.push(chunk.id);
+          this.renderedChunkIds.add(chunk.id);
 
           this.taskEmitter.emitMount({
             $el: $chunkEl,
@@ -282,7 +282,7 @@ export class EasyListLib extends TaskRootHandler {
 
     const $chunkEl = this.drawChunk(chunk);
 
-    this.renderedChunkIds.push(chunk.id);
+    this.renderedChunkIds.add(chunk.id);
 
     this.taskEmitter.emitMount({
       $el: $chunkEl,
@@ -307,7 +307,7 @@ export class EasyListLib extends TaskRootHandler {
 
     if (chunkIndex === 0) {
       this.getChunksContainer().prepend($chunkEl);
-    } else if (this.renderedChunkIds.length === 0) {
+    } else if (this.renderedChunkIds.size === 0) {
       this.getChunksContainer().appendChild($chunkEl);
     } else {
       let $prevChunk = this.getTailChunkEl();
@@ -364,7 +364,7 @@ export class EasyListLib extends TaskRootHandler {
         $el: $chunkEl,
         chunk,
         renderedChunks: this.getChunksByIds(this.renderedChunkIds),
-        isShadowPlaceholder: this.runningShadowPlaceholderIds.includes(chunk.id),
+        isShadowPlaceholder: this.runningShadowPlaceholderIds.has(chunk.id),
       });
     }
   }
@@ -378,8 +378,8 @@ export class EasyListLib extends TaskRootHandler {
     if ($chunkEl) {
       $chunkEl.remove();
 
-      this.runningShadowPlaceholderIds.splice(this.runningShadowPlaceholderIds.indexOf(chunk.id), 1);
-      this.renderedChunkIds.splice(this.renderedChunkIds.indexOf(chunk.id), 1);
+      this.runningShadowPlaceholderIds.delete(chunk.id);
+      this.renderedChunkIds.delete(chunk.id);
       this.calcTree();
     }
   }
@@ -393,14 +393,12 @@ export class EasyListLib extends TaskRootHandler {
   }
 
   private calcChunk(chunk: Chunk): void {
-    const chunkIndex = this.renderedChunkIds.indexOf(chunk.id);
-
     /**
      * Wow, this scroll is so fast
      * This case can be happen if chunk was already calculated and
-     * now is removing in tree render
+     * now is removed in tree render
      */
-    if (chunkIndex === -1) {
+    if (this.renderedChunkIds.has(chunk.id) === false) {
       return;
     }
 
@@ -505,8 +503,8 @@ export class EasyListLib extends TaskRootHandler {
     return $chunkEl;
   }
 
-  private getChunksByIds(chunkIds: number[]): Chunk[] {
-    return chunkIds.map(chunkId => this.getChunkById(chunkId));
+  private getChunksByIds(chunkIds: Set<number>): Chunk[] {
+    return [...chunkIds].map(chunkId => this.getChunkById(chunkId));
   }
 
   private getChunkById(chunkId: number): Chunk {
