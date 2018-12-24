@@ -230,6 +230,7 @@ export class EasyListLib extends TaskRootHandler {
         if (keepChunks.includes(chunk.id) === false) {
           this.taskEmitter.emitRender({
             chunk,
+            isShadowPlaceholder: false,
           });
         }
       });
@@ -257,6 +258,7 @@ export class EasyListLib extends TaskRootHandler {
 
         this.taskEmitter.emitRender({
           chunk,
+          isShadowPlaceholder: true,
         }).then(event => {
           event.stopImmediatePropagation();
 

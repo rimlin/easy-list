@@ -33,14 +33,15 @@ export interface TaskReachBoundData {
 
 export type TaskRenderData = {
   readonly chunk: Chunk;
+  readonly isShadowPlaceholder: boolean;
 };
 
 export type TaskMountData = TaskData & {
-  $el: $ChunkEl;
-  isShadowPlaceholder: boolean;
+  readonly $el: $ChunkEl;
+  readonly isShadowPlaceholder: boolean;
 };
 
 export type TaskUnmountData = TaskData & {
-  $el: $ChunkEl;
-  isShadowPlaceholder: boolean;
+  readonly $el: $ChunkEl;
+  readonly isShadowPlaceholder: boolean;
 };

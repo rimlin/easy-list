@@ -54,8 +54,10 @@ easyList.onMount(event => {
   }));
 });
 
-easyList.onUnmount(event => {
-
+easyList.onRender(event => {
+  if (event.detail.isShadowPlaceholder) {
+    return;
+  }
 });
 
 function getItem() {
