@@ -9,8 +9,8 @@ export type ExtendableEvent<T> = CustomEvent<T> & {
 };
 
 export enum MoveDirection {
-  TO_TOP,
-  TO_BOTTOM,
+  TO_TOP = 'to_top',
+  TO_BOTTOM = 'to_bottom',
 }
 
 export enum TaskType {
