@@ -457,14 +457,6 @@ export class EasyListLib extends TaskRootHandler {
         });
       }
     });
-
-    setTimeout(() => {
-      this.taskEmitter.emitReachBound({
-        direction: MoveDirection.TO_BOTTOM,
-        forwardChunks: [],
-        __remainingDistance: 0,
-      });
-    })
   }
 
   private convertItemsToChunks(items: RawItem[]): Chunk[] {

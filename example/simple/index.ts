@@ -12,12 +12,10 @@ const easyList = new EasyList({
 });
 
 const $feed = document.querySelector('#feed');
-
+addItems();
 easyList.bind($feed);
 
 easyList.onReachBound(event => {
-  const items: RawItem[] = [];
-
   if (event.detail.forwardChunks.length !== 0) {
     return;
   }
@@ -26,16 +24,7 @@ easyList.onReachBound(event => {
     return;
   }
 
-  for (let i = 0; i < 10; i++) {
-    const item = getItem();
-
-    items.push({
-      template: getItemTemplate(item),
-      data: item,
-    });
-  }
-
-  easyList.appendItems(items);
+  addItems();
 });
 
 easyList.onMount(event => {
@@ -59,6 +48,21 @@ easyList.onRender(event => {
     return;
   }
 });
+
+function addItems() {
+  const items: RawItem[] = [];
+
+  for (let i = 0; i < 10; i++) {
+    const item = getItem();
+
+    items.push({
+      template: getItemTemplate(item),
+      data: item,
+    });
+  }
+
+  easyList.appendItems(items);
+}
 
 function getItem() {
   const newId = id++;
