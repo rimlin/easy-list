@@ -123,6 +123,7 @@ Function to append new items in list.
 Function to prepend new items in list.
 
 `RawItem` - source object in `EasyList`. Contain next properties:
+
 | Property | Value  |
 |----------|--------|
 | template | string |
@@ -145,7 +146,7 @@ You can easily subscribe to it by next methods:
 `onUnmount(callback: (event: ExtendableEvent<TaskUnmountData>) => void)`
 
 
-`ExtendableEvent<T>` - is simple [CustomEvent](https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent/CustomEvent), which was supplied some extra properties in `details` and methods. 
+`ExtendableEvent<T>` - is simple [CustomEvent](https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent/CustomEvent), which was supplied `waitUntil` method. 
 
 #### `ExtendableEvent<T>` methods
 `waitUntil(promise: Promise<any>)`
@@ -169,7 +170,7 @@ easyList.onMount(event => {
 });
 ```
 
-#### `ExtendableEvent<T>` properties
+#### `ExtendableEvent<T>` details properties
 Each type of event have own readonly properties.
 
 **TaskReachBoundData**
@@ -209,6 +210,7 @@ Each type of event have own readonly properties.
 
 
 `Chunk` - object which operated by `EasyList`. Contain next properties:
+
 | Property   | Value   |
 |------------|---------|
 | id         | number  |
