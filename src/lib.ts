@@ -21,6 +21,24 @@ export interface EasyListOptions {
    * Emitting `onMount/onUnmount` event with `isShadowPlaceholder: true` option.
    */
   useShadowPlaceholder?: boolean;
+
+  /**
+   * Max amount of items in list.
+   *
+   * By default is 5 items.
+   */
+  maxItems?: number;
+
+  /**
+   * Amount of pixels between edge item and current scroll position.
+   * It should be less than item height.
+   *
+   * By default is 300px.
+   */
+  sensitivity?: {
+    [MoveDirection.TO_BOTTOM]?: number;
+    [MoveDirection.TO_TOP]?: number;
+  };
 }
 
 export interface RawItem {
@@ -36,15 +54,12 @@ export interface Chunk extends RawItem {
 
 export type $ChunkEl = HTMLDivElement;
 
-const mockChunk = {
-  id: 0,
-  data: {},
-  template: 'test1',
-};
-const mockChunk2 = {
-  id: 1,
-  data: {},
-  template: 'test2',
+export const DEFAULT_OPTIONS: EasyListOptions = {
+  maxItems: 5,
+  sensitivity: {
+    [MoveDirection.TO_BOTTOM]: 300,
+    [MoveDirection.TO_TOP]: 300,
+  }
 };
 
 export class EasyListLib extends TaskRootHandler {
@@ -52,7 +67,7 @@ export class EasyListLib extends TaskRootHandler {
   private $target: HTMLElement;
   private lockMoveHandler = false;
 
-  private maxRenderedChunks = 5;
+  private maxRenderedChunks = DEFAULT_OPTIONS.maxItems;
   private lastChunkId = 0;
 
   private chunks: Chunk[] = [];
@@ -68,6 +83,8 @@ export class EasyListLib extends TaskRootHandler {
   ) {
     super(priorityEvents);
 
+    this.maxRenderedChunks = this.options.maxItems;
+
     this.onRootReachBound(event => {
       this.lockMoveHandler = false;
 
@@ -79,9 +96,9 @@ export class EasyListLib extends TaskRootHandler {
        * if scroll is over of bottom chunks box;
        */
 
-      let remainHeight = Math.abs(event.detail.__remainingDistance);
+      let remainHeight = Math.abs(event.detail.moveInfo.remainingDistance);
 
-      if (event.detail.direction === MoveDirection.TO_BOTTOM) {
+      if (event.detail.moveInfo.direction === MoveDirection.TO_BOTTOM) {
         if (event.detail.forwardChunks.length > 0) {
           const reduceDelta = () => {
             const lastRenderedIndex = this.headRenderedChunkIndex + this.maxRenderedChunks;
@@ -105,7 +122,7 @@ export class EasyListLib extends TaskRootHandler {
         }
       }
 
-      if (event.detail.direction === MoveDirection.TO_TOP) {
+      if (event.detail.moveInfo.direction === MoveDirection.TO_TOP) {
         if (event.detail.forwardChunks.length > 0) {
           const reduceDelta = () => {
             if (this.headRenderedChunkIndex <= 0) {
@@ -435,25 +452,23 @@ export class EasyListLib extends TaskRootHandler {
         return;
       }
 
-      if (info.direction === MoveDirection.TO_BOTTOM && info.remainingDistance < 300) {
+      if (info.direction === MoveDirection.TO_BOTTOM && info.remainingDistance < this.options.sensitivity[MoveDirection.TO_BOTTOM]) {
         this.lockMoveHandler = true;
 
         const forwardChunks = this.chunks.slice(this.headRenderedChunkIndex + this.toRenderChunkIds.size);
 
         this.taskEmitter.emitReachBound({
-          direction: info.direction,
+          moveInfo: info,
           forwardChunks,
-          __remainingDistance: info.remainingDistance,
         });
-      } else if (info.direction === MoveDirection.TO_TOP && info.remainingDistance < 300) {
+      } else if (info.direction === MoveDirection.TO_TOP && info.remainingDistance < this.options.sensitivity[MoveDirection.TO_TOP]) {
         this.lockMoveHandler = true;
 
         const forwardChunks = this.chunks.slice(0, this.headRenderedChunkIndex);
 
         this.taskEmitter.emitReachBound({
-          direction: info.direction,
+          moveInfo: info,
           forwardChunks,
-          __remainingDistance: info.remainingDistance,
         });
       }
     });

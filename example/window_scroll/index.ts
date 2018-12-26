@@ -1,5 +1,6 @@
 import { EasyList } from '../../index';
 import { createScrollStrategy } from '../../src/strategy/scroll';
+import { MoveDirection } from '../../src/task/interfaces';
 
 const randPicture = 'https://source.unsplash.com/random/800x600';
 let id = 0;

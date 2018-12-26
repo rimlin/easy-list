@@ -1,4 +1,4 @@
-import { EasyListLib, RawItem, EasyListOptions } from './lib';
+import { EasyListLib, RawItem, EasyListOptions, DEFAULT_OPTIONS } from './lib';
 import { PriorityEvents } from './services/priority-events';
 import { TaskEmitter } from './task/emitter';
 import { TaskChildHandler } from './task/child-handler';
@@ -8,8 +8,10 @@ import {
   TaskMountData,
   TaskReachBoundData,
   TaskUnmountData,
+  MoveDirection,
 } from './task/interfaces';
 import { createScrollStrategy } from './strategy/scroll';
+import { isExists } from './utils';
 
 export class EasyList {
   private easyList: EasyListLib;
@@ -19,11 +21,7 @@ export class EasyList {
     const priorityEvents = new PriorityEvents();
     const taskEmitter = new TaskEmitter(priorityEvents);
 
-    if (!options.strategy) {
-      options.strategy = createScrollStrategy();
-    }
-
-    this.easyList = new EasyListLib(options, priorityEvents, taskEmitter);
+    this.easyList = new EasyListLib(this.normalizeOptions(options), priorityEvents, taskEmitter);
     this.taskChildHandler = new TaskChildHandler(priorityEvents);
   }
 
@@ -57,5 +55,44 @@ export class EasyList {
 
   onUnmount(callback: (event: ExtendableEvent<TaskUnmountData>) => void): void {
     this.taskChildHandler.onUnmount(callback);
+  }
+
+  private normalizeOptions(options: EasyListOptions): EasyListOptions {
+    if (!options.strategy) {
+      options.strategy = createScrollStrategy();
+    }
+
+    const throwInvalidNumber = name => {
+      throw new Error(`Invalid ${name} value: it should be a integer number`);
+    }
+
+    const checkSensitivity = direction => {
+      if (isExists(options.sensitivity[direction])) {
+        if (
+          Number.isSafeInteger(options.sensitivity[direction]) === false
+        ) {
+          throwInvalidNumber(`sensitivity ${direction}`);
+        }
+      } else {
+        options.sensitivity[direction] = DEFAULT_OPTIONS.sensitivity[direction];
+      }
+    }
+
+    if (isExists(options.maxItems)) {
+      if (Number.isSafeInteger(options.maxItems) === false) {
+        throwInvalidNumber('maxItems');
+      }
+    } else {
+      options.maxItems = DEFAULT_OPTIONS.maxItems;
+    }
+
+    if (isExists(options.sensitivity)) {
+      checkSensitivity(MoveDirection.TO_TOP);
+      checkSensitivity(MoveDirection.TO_BOTTOM);
+    } else {
+      options.sensitivity = DEFAULT_OPTIONS.sensitivity;
+    }
+
+    return options;
   }
 }

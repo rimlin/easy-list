@@ -43,7 +43,7 @@ easyList.onReachBound(event => {
     return;
   }
 
-  if (event.detail.direction !== MoveDirection.TO_BOTTOM) {
+  if (event.detail.moveInfo.direction !== MoveDirection.TO_BOTTOM) {
     return;
   }
 
@@ -92,6 +92,12 @@ function getItemTemplate(item) {
 ## How it work
 
 
+## Roadmap to version 1.0.0
+- test coverage
+- intersection strategy
+- Angular/React implementation
+- perfomance benchmarking
+
 ## API
 ### Options
 
@@ -107,6 +113,32 @@ By default is `ScrollStrategy`.
 If enabled, after adding new chunks add space as placeholder after/before rendered chunks. If chunk height is not defined, mount him as placeholder to detect height of him element and increase placehodler space.
 
 Emitting `onMount/onUnmount` event with `isShadowPlaceholder: true` option.
+
+#### maxItems?: number;
+
+Max amount of items in list.
+
+By default is 5 items.
+
+#### sensitivity?: object;
+
+Amount of pixels between edge item and current scroll position.
+It should be less than item height.
+
+By default is 300px.
+
+
+Example of options: 
+```
+const easyList = new EasyList({
+  strategy: createScrollStrategy('#parent'),
+  useShadowPlaceholder: true,
+  maxItems: 3,
+  sensitivity: {
+    [MoveDirection.TO_BOTTOM]: 500,
+  }
+});
+```
 
 ### Methods
 
@@ -175,10 +207,10 @@ Each type of event have own readonly properties.
 
 **TaskReachBoundData**
 
-| Property      | Value                                |
-|---------------|--------------------------------------|
-| direction     | MoveDirection('to_top', 'to_bottom') |
-| forwardChunks | Chunk[]                              |
+| Property      | Value            |
+|---------------|------------------|
+| forwardChunks | Chunk[]          |
+| moveInfo      | StrategyMoveInfo |
 
 
 **TaskRenderData**
@@ -220,3 +252,10 @@ Each type of event have own readonly properties.
 | data       | any     |
 
 `$ChunkEl` - is `HTMLElement` object.
+
+`StrategyMoveInfo` - is object of Strategy `move` event. Contain next properties:
+
+| Property          | Value                            |
+|-------------------|----------------------------------|
+| direction         | MoveDirection(to_top, to_bottom) |
+| remainingDistance | number                           |

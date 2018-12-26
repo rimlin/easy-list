@@ -64,7 +64,7 @@ export class TaskEmitter {
   ) {}
 
   emitReachBound(data: TaskReachBoundData): Promise<ExtendableEvent<TaskReachBoundData>> {
-    return this.emitExtendableEvent<TaskReachBoundData>(TaskType.REACH_BOUND, data, data.direction);
+    return this.emitExtendableEvent<TaskReachBoundData>(TaskType.REACH_BOUND, data, data.moveInfo.direction);
   }
 
   emitRender(data: TaskRenderData): Promise<ExtendableEvent<TaskRenderData>> {

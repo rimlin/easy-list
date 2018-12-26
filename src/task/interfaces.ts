@@ -1,4 +1,5 @@
 import { Chunk, $ChunkEl } from '../lib';
+import { StrategyMoveInfo } from '../strategy/interfaces';
 
 export type ExtendableEvent<T> = CustomEvent<T> & {
   readonly waitUntil: (promise: Promise<any>) => void;
@@ -26,9 +27,8 @@ export interface TaskData {
 }
 
 export interface TaskReachBoundData {
-  readonly direction: MoveDirection;
   readonly forwardChunks: Chunk[];
-  readonly __remainingDistance: number;
+  readonly moveInfo: StrategyMoveInfo;
 };
 
 export type TaskRenderData = {

@@ -9,6 +9,10 @@ let id = 0;
 const easyList = new EasyList({
   strategy: createScrollStrategy('#parent'),
   useShadowPlaceholder: true,
+  maxItems: 3,
+  sensitivity: {
+    [MoveDirection.TO_BOTTOM]: 500,
+  }
 });
 
 const $feed = document.querySelector('#feed');
@@ -20,7 +24,7 @@ easyList.onReachBound(event => {
     return;
   }
 
-  if (event.detail.direction !== MoveDirection.TO_BOTTOM) {
+  if (event.detail.moveInfo.direction !== MoveDirection.TO_BOTTOM) {
     return;
   }
 
