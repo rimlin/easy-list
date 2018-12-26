@@ -1,5 +1,5 @@
 # Easy List
-> Fast infinity list JavaScript library
+> Fast infinity list JavaScript library without dependencies
 
 ![npm version](https://badge.fury.io/js/easy-list.svg)
 
@@ -251,7 +251,7 @@ Each type of event have own readonly properties.
 | height     | number  |
 | data       | any     |
 
-`$ChunkEl` - is `HTMLElement` object.
+`$ChunkEl` - is `HTMLDivElement` object.
 
 `StrategyMoveInfo` - is object of Strategy `move` event. Contain next properties:
 
