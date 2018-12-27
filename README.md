@@ -1,5 +1,5 @@
 # Easy List
-> Fast infinity list JavaScript library without dependencies
+> Fast infinity list without dependencies
 
 ![npm version](https://badge.fury.io/js/easy-list.svg)
 

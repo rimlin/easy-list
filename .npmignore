@@ -13,3 +13,6 @@ src/*.ts
 !src/*.d.ts
 example
 test
+src
+index.ts
+gulpfile.example.js

@@ -1,15 +1,24 @@
 {
   "name": "easy-list",
   "version": "0.1.4",
-  "description": "",
-  "main": "index.js",
+  "description": "Fast infinity list for web.",
+  "keywords": [
+    "virtual",
+    "infinite",
+    "infinity",
+    "virtual",
+    "scroller",
+    "feed"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "rimraf dist && tsc",
     "start:example": "rimraf example-dist && gulp --gulpfile gulpfile.example.js",
     "prepare": "npm run build"
   },
   "files": [
-    "dist/*"
+    "dist/**/*"
   ],
   "author": "",
   "license": "ISC",
