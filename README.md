@@ -49,48 +49,10 @@ easyList.onReachBound(event => {
 
   addItems();
 });
-
-addItems();
-
-function addItems() {
-  const items = [];
-
-  for (let i = 0; i < 10; i++) {
-    const item = getItem();
-
-    items.push({
-      template: getItemTemplate(item),
-      data: item,
-    });
-  }
-
-  easyList.appendItems(items);
-}
-
-const randPicture = 'https://source.unsplash.com/random/800x600';
-let id = 0;
-
-function getItem() {
-  const newId = id++;
-
-  return {
-    image: `${randPicture}?sig=${newId}`,
-    id: newId,
-  };
-}
-
-function getItemTemplate(item) {
-  return `
-    <div class="item">
-      <h1>Picture ${item.id}</h1>
-      <img src="${item.image}" />
-    </div>
-  `;
-}
 ```
 
 ## How it work
-
+Section in progress
 
 ## Roadmap to version 1.0.0
 - test coverage
@@ -139,6 +101,8 @@ const easyList = new EasyList({
   }
 });
 ```
+
+`MoveDirection` - is enum with properties: `TO_BOTTOM` (`'to_bottom'`), `TO_TOP` (`'to_top'`).
 
 ### Methods
 
