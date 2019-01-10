@@ -3,6 +3,8 @@
 
 ![npm version](https://badge.fury.io/js/easy-list.svg)
 
+Demo: https://rimlin.github.io/easy-list/
+
 ## Installation
 ```
 $ npm i easy-list
