@@ -34,9 +34,9 @@ function bundle (browserify, dest) {
 }
 
 const files = [
-  './example/simple/index.ts',
-  './example/shadow/index.ts',
+  './example/block_scroll/index.ts',
   './example/window_scroll/index.ts',
+  './example/window_scroll_shadow/index.ts',
 ];
 
 var tsBuildTasks = files.map(function(entry) {

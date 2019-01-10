@@ -9,15 +9,15 @@ let id = 0;
 const easyList = new EasyList({
   strategy: createScrollStrategy('#parent'),
   useShadowPlaceholder: true,
-  maxItems: 3,
+  maxItems: 5,
   sensitivity: {
     [MoveDirection.TO_BOTTOM]: 500,
   }
 });
 
-const $feed = document.querySelector('#feed');
+easyList.bind('#feed');
+
 addItems();
-easyList.bind($feed);
 
 easyList.onReachBound(event => {
   if (event.detail.forwardChunks.length !== 0) {
