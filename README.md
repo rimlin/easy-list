@@ -1,5 +1,5 @@
 # Easy List
-> Fast infinity list without dependencies
+> Fast infinity list without dependencies written in TypeScript
 
 ![npm version](https://badge.fury.io/js/easy-list.svg)
 
@@ -52,7 +52,11 @@ easyList.onReachBound(event => {
 ```
 
 ## How it work
-Section in progress
+`EasyList` library based on events. Default lifecycle of library:
+
+![Lifecycle of library flowchart](https://raw.githubusercontent.com/rimlin/easy-list/master/docs/assets/how-to-events-flowchart.png)
+
+ Each library event is `ExtendableEvent<T>`, which have `waitUnitl` method. All this events bubble up to root handler in library. If you want to cancel specific event, use `event.stopImmediatePropagation()`.
 
 ## Roadmap to version 1.0.0
 - test coverage
@@ -68,7 +72,7 @@ Section in progress
 #### strategy?: StrategyFactory;
 Strategy is used to detect, that scroll bound is touched chunks box.
 
-By default is `ScrollStrategy`.
+By default is [`ScrollStrategy`](https://github.com/rimlin/easy-list/blob/master/src/strategy/scroll.ts). You can write your own strategy, but it must satisfy [`Strategy` interface](https://github.com/rimlin/easy-list/blob/master/src/strategy/interfaces.ts).
 
 #### useShadowPlaceholder?: boolean;
 
@@ -131,16 +135,25 @@ In `data` property could be stored any object. For example, you can set a real `
 ### Events
 Created `EasyList` instance emit next events: `ReachBound`, `Render`, `Mount`, `Unmount`.
 
-You can easily subscribe to it by next methods:
+You can subscribe to it by next methods:
 
 `onReachBound(callback: (event: ExtendableEvent<TaskReachBoundData>) => void)`
 
+Callback called after scroll area reach sensitivity bound. 
+
 `onRender(callback: (event: ExtendableEvent<TaskRenderData>) => void)`
+
+Callback called before insert `Chunk` to dom.
 
 `onMount(callback: (event: ExtendableEvent<TaskMountData>) => void)`
 
+Callback called after insert `Chunk` to dom and before calculate it height. 
+Here you can attach event handlers to DOM elements or wait until images are loaded before height calculation.
+
 `onUnmount(callback: (event: ExtendableEvent<TaskUnmountData>) => void)`
 
+Callback called before remove `Chunk` from the DOM. 
+You can remove event handlers from DOM elements and etc.
 
 `ExtendableEvent<T>` - is simple [CustomEvent](https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent/CustomEvent), which was supplied `waitUntil` method. 
 
