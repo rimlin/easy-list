@@ -12,6 +12,7 @@ import {
 } from './task/interfaces';
 import { createScrollStrategy } from './strategy/scroll';
 import { isExists } from './utils';
+import { DefaultRenderer } from './renderer/default';
 
 export class EasyList {
   private easyList: EasyListLib;
@@ -21,7 +22,12 @@ export class EasyList {
     const priorityEvents = new PriorityEvents();
     const taskEmitter = new TaskEmitter(priorityEvents);
 
-    this.easyList = new EasyListLib(this.normalizeOptions(options), priorityEvents, taskEmitter);
+    this.easyList = new EasyListLib(
+      this.normalizeOptions(options),
+      priorityEvents,
+      taskEmitter,
+    );
+
     this.taskChildHandler = new TaskChildHandler(priorityEvents);
   }
 
@@ -60,6 +66,10 @@ export class EasyList {
   private normalizeOptions(options: EasyListOptions): EasyListOptions {
     if (!options.strategy) {
       options.strategy = createScrollStrategy();
+    }
+
+    if (!options.renderer) {
+      options.renderer = new DefaultRenderer();
     }
 
     const throwInvalidNumber = name => {
